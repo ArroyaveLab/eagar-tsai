@@ -23,6 +23,6 @@ module load Python/3.8.2
 module load OpenBLAS/0.3.9
 module load Thermo-Calc/2023.1
 cd ${SCRATCH:-$SLURM_SUBMIT_DIR}
-source ${VENV_PATH:-$HOME/venv/tcpython-2023.1/bin/activate}
+source ${VENV_PATH:-$HOME/venv/bin/activate}
 cd $SLURM_SUBMIT_DIR
 python et_melt_pool_script.py
