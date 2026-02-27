@@ -1,0 +1,80 @@
+site_name: Eagar–Tsai Model
+site_description: Python library for melt pool dimension estimation using the Eagar–Tsai moving heat source model
+repo_url: https://github.com/ArroyaveLab/eagar-tsai
+repo_name: ArroyaveLab/eagar-tsai
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme)"
+      scheme: slate
+      primary: blue grey
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue grey
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue grey
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+  features:
+    - toc.integrate
+    - toc.follow
+    - navigation.tabs
+    - navigation.footer
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.indexes
+    - navigation.top
+    - content.code.copy
+    - content.code.annotate
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.snippets
+  - pymdownx.inlinehilite
+  - def_list
+  - tables
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.tabbed:
+      alternate_style: true
+
+plugins:
+  - search
+  - autorefs
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            show_source: false
+            show_bases: false
+            show_root_heading: true
+            show_root_full_path: false
+            merge_init_into_class: true
+            parameter_headings: true
+            show_symbol_type_toc: true
+            show_signature: true
+            show_signature_annotations: true
+
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - API Reference:
+      - Overview: api/reference.md
