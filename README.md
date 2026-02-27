@@ -45,14 +45,14 @@ import pandas as pd
 from eagar_tsai import compute_melt_pool
 
 df = pd.DataFrame({
-    "velocity_m_s":            [0.5],
-    "power_w":                 [200.0],
-    "beam_diameter_m":         [100e-6],
-    "absorptivity":            [0.35],
-    "liquidus_temperature_k":  [1700.0],
+    "velocity_m_s":              [0.5],
+    "power_w":                   [200.0],
+    "beam_diameter_m":           [100e-6],
+    "absorptivity":              [0.35],
+    "liquidus_temperature_k":    [1700.0],
     "thermal_conductivity_w_mk": [30.0],
-    "density_kg_m3":           [7800.0],
-    "specific_heat_j_kgk":    [700.0],
+    "density_kg_m3":             [7800.0],
+    "specific_heat_j_kgk":       [700.0],
 })
 
 result = compute_melt_pool(df)
@@ -64,8 +64,8 @@ Commonly overridden parameters:
 ```python
 result = compute_melt_pool(
     df,
-    workers=4,      # parallel worker processes (default: 1, serial)
-    chunk_size=50,  # rows per worker chunk (default: 50)
+    workers=4,                # parallel worker processes (default: 1, serial)
+    chunk_size=50,            # rows per worker chunk (default: 50)
     output_dir="CalcFiles/",  # write per-chunk CSVs (default: None)
 )
 ```
