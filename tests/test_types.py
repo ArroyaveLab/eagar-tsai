@@ -11,7 +11,7 @@ from eagar_tsai._types import _T0_K
 
 
 class TestBeamParameters:
-    """Tests for :class:`BeamParameters`."""
+    """Tests for BeamParameters."""
 
     def test_sigma_derived_correctly(self) -> None:
         """Sigma = sqrt(2) * beam_diameter / 2."""
@@ -47,7 +47,7 @@ class TestBeamParameters:
 
 
 class TestMaterialProperties:
-    """Tests for :class:`MaterialProperties`."""
+    """Tests for MaterialProperties."""
 
     def test_thermal_diffusivity(self) -> None:
         """thermal_diffusivity = k / (rho * cp)."""
@@ -96,7 +96,7 @@ class TestMaterialProperties:
 
 
 class TestSimulationDomain:
-    """Tests for :class:`SimulationDomain`."""
+    """Tests for SimulationDomain."""
 
     def test_metre_properties(self) -> None:
         """Property accessors return correct SI values."""
@@ -129,7 +129,7 @@ class TestSimulationDomain:
 
 
 class TestMeltPoolResult:
-    """Tests for :class:`MeltPoolResult`."""
+    """Tests for MeltPoolResult."""
 
     def test_micron_properties(self) -> None:
         """Micrometre properties are metres x 1e6."""

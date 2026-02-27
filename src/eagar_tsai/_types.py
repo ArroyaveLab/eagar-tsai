@@ -48,7 +48,7 @@ class BeamParameters:
             raise ValueError(f"velocity must be positive, got {self.velocity}")
         if not (0.0 < self.absorptivity <= 1.0):
             raise ValueError(f"absorptivity must be in (0, 1], got {self.absorptivity}")
-        # σ = √2 · (beam_diameter / 2) — 1/e² Gaussian half-width
+        # sigma = sqrt(2) * (beam_diameter / 2) — 1/e^2 Gaussian half-width
         object.__setattr__(self, "sigma", math.sqrt(2.0) * (self.beam_diameter / 2.0))
 
 
