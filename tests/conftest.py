@@ -11,7 +11,7 @@ from eagar_tsai import BeamParameters, MaterialProperties, SimulationDomain
 def steel_beam() -> BeamParameters:
     """A representative steel laser beam configuration."""
     return BeamParameters(
-        beam_diameter=100e-6,  # 100 µm
+        beam_diameter=100e-6,  # 100 um
         power=200.0,  # 200 W
         velocity=0.5,  # 0.5 m/s
         absorptivity=0.35,
@@ -23,9 +23,9 @@ def steel_material() -> MaterialProperties:
     """Approximate liquidus-temperature properties for 316L stainless steel."""
     return MaterialProperties(
         liquidus_temperature=1700.0,  # K
-        thermal_conductivity=30.0,  # W/(m·K)
-        density=7800.0,  # kg/m³
-        specific_heat=700.0,  # J/(kg·K)
+        thermal_conductivity=30.0,  # W/(m K)
+        density=7800.0,  # kg/m^3
+        specific_heat=700.0,  # J/(kg K)
     )
 
 
