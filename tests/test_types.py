@@ -114,7 +114,6 @@ class TestSimulationDomain:
         assert math.isclose(d2.x_length_um, 1100.0)
         assert math.isclose(d2.y_length_um, 1050.0)
         assert math.isclose(d2.z_depth_um, 825.0)
-        # Original unchanged
         assert math.isclose(d.x_length_um, 1000.0)
 
     def test_frozen(self) -> None:
@@ -133,7 +132,7 @@ class TestMeltPoolResult:
     """Tests for :class:`MeltPoolResult`."""
 
     def test_micron_properties(self) -> None:
-        """Micrometre properties are metres × 1e6."""
+        """Micrometre properties are metres x 1e6."""
         r = MeltPoolResult(
             length=500e-6,
             width=300e-6,

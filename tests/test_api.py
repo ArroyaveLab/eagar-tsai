@@ -1,7 +1,4 @@
-"""Tests for eagar_tsai._api (DataFrame API and chunk processing).
-
-Merges the former test_api.py and test_parallel.py.
-"""
+"""Tests for eagar_tsai._api (DataFrame API and chunk processing)."""
 
 from __future__ import annotations
 
@@ -55,11 +52,6 @@ def _minimal_df(**overrides: object) -> pd.DataFrame:
     return _chunk(**overrides)
 
 
-# ---------------------------------------------------------------------------
-# compute_melt_pool validation tests (fast — no computation)
-# ---------------------------------------------------------------------------
-
-
 class TestComputeMeltPoolValidation:
     """Input validation tests (fast — no computation)."""
 
@@ -80,11 +72,6 @@ class TestComputeMeltPoolValidation:
         assert "velocity_m_s" in REQUIRED_COLUMNS
         assert "power_w" in REQUIRED_COLUMNS
         assert "absorptivity" in REQUIRED_COLUMNS
-
-
-# ---------------------------------------------------------------------------
-# compute_melt_pool end-to-end tests (marked slow)
-# ---------------------------------------------------------------------------
 
 
 @pytest.mark.slow
@@ -128,11 +115,6 @@ class TestComputeMeltPoolOutput:
             assert (serial[col] - parallel[col]).abs().max() < 1e-12
 
 
-# ---------------------------------------------------------------------------
-# _process_chunk error-handling branch (fast — no computation)
-# ---------------------------------------------------------------------------
-
-
 class TestProcessChunkErrorHandling:
     """Invalid rows are caught and replaced with NaN outputs."""
 
@@ -159,11 +141,6 @@ class TestProcessChunkErrorHandling:
         for col in _OUTPUT_COLUMNS:
             assert math.isnan(result_0.iloc[0][col])
             assert math.isnan(result_7.iloc[0][col])
-
-
-# ---------------------------------------------------------------------------
-# _process_chunk CSV output branch (marked slow — requires computation)
-# ---------------------------------------------------------------------------
 
 
 @pytest.mark.slow

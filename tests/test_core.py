@@ -1,7 +1,4 @@
-"""Tests for eagar_tsai._core (integrand and compute_single_point).
-
-Merges the former test_integrand.py and test_solver.py.
-"""
+"""Tests for eagar_tsai._core (integrand and compute_single_point)."""
 
 from __future__ import annotations
 
@@ -163,7 +160,7 @@ class TestComputeSinglePoint:
         steel_material: MaterialProperties,
     ) -> None:
         """Calling without a domain argument does not raise."""
-        # This will use the default 1200×1200×1000 µm, 1 µm grid — very slow,
+        # This will use the default 1200x1200x1000 um, 1 um grid — very slow,
         # but we just check it doesn't error out. Marked slow for this reason.
         result = compute_single_point(steel_beam, steel_material)
         assert isinstance(result, MeltPoolResult)
@@ -174,7 +171,7 @@ class TestComputeSinglePoint:
         steel_material: MaterialProperties,
         small_domain: SimulationDomain,
     ) -> None:
-        """Micrometre properties are exactly metres × 1e6."""
+        """Micrometre properties are exactly metres x 1e6."""
         result = compute_single_point(steel_beam, steel_material, small_domain)
         assert abs(result.length_um - result.length * 1e6) < 1e-12
         assert abs(result.width_um - result.width * 1e6) < 1e-12
