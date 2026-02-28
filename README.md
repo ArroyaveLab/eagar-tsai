@@ -77,7 +77,7 @@ result = compute_melt_pool(
 | `velocity_m_s` | m/s | Scan velocity                    |
 | `power_w` | W | Laser power                      |
 | `beam_diameter_m` | m | Beam diameter (2σ)               |
-| `absorptivity` | — | Absorptivity [0, 1]              |
+| `absorptivity` | — | Absorptivity (0, 1]              |
 | `liquidus_temperature_k` | K | Liquidus temperature             |
 | `thermal_conductivity_w_mk` | W/(m·K) | Thermal conductivity at liquidus |
 | `density_kg_m3` | kg/m³ | Density                          |

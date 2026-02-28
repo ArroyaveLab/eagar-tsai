@@ -3,10 +3,6 @@
 This module provides compute_melt_pool, the primary entry point for
 processing multiple process parameter combinations stored in a
 pandas DataFrame.
-
-Chunk processing helpers (_process_row, _process_chunk) are defined here
-at module level so they are picklable for
-concurrent.futures.ProcessPoolExecutor.
 """
 
 from __future__ import annotations
@@ -96,10 +92,6 @@ def _process_chunk(
     params: tuple[int, pd.DataFrame, SimulationDomain | None, Path | None],
 ) -> pd.DataFrame:
     """Process a chunk of rows and optionally save to CSV.
-
-    This function is the top-level callable submitted to
-    concurrent.futures.ProcessPoolExecutor. It must be importable
-    at module level (no lambdas or closures) to be picklable.
 
     Args:
         params: Tuple of ``(chunk_index, chunk_df, domain, output_dir)``.

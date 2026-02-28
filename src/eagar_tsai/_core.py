@@ -1,7 +1,5 @@
 """Core Eagar-Tsai solver: integrand and single-point melt pool computation.
 
-Merges the former _integrand.py and _solver.py modules.
-
 The temperature field is computed by calling scipy.integrate.quad once per
 grid point. When the compiled C extension is available, the integrand is
 wrapped as a LowLevelCallable so QUADPACK calls it directly at C speed with
@@ -157,7 +155,6 @@ def _compute_temperature_planes(
     power = beam.power
     conductivity = material.thermal_conductivity
 
-    # Non-dimensional parameters
     thermal_ratio = alpha / (velocity * sigma)
     temp_scale = (absorptivity * power) / (np.pi * (conductivity / alpha) * np.sqrt(np.pi * alpha * velocity * (sigma**3)))
 
