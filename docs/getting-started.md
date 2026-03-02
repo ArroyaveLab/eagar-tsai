@@ -83,22 +83,22 @@ from eagar_tsai import (
 )
 
 beam = BeamParameters(
-    beam_diameter=100e-6,   # 100 µm
-    power=200.0,            # 200 W
-    velocity=0.5,           # 0.5 m/s
-    absorptivity=0.35,
+    beam_diameter=100e-6,         # m
+    power=200.0,                  # W
+    velocity=0.5,                 # m/s
+    absorptivity=0.35,            # —
 )
 material = MaterialProperties(
-    liquidus_temperature=1700.0,
-    thermal_conductivity=30.0,
-    density=7800.0,
-    specific_heat=700.0,
+    liquidus_temperature=1700.0,  # K
+    thermal_conductivity=30.0,    # W/(m·K)
+    density=7800.0,               # kg/m³
+    specific_heat=700.0,          # J/(kg·K)
 )
 domain = SimulationDomain(
-    x_length_um=1200.0,
-    y_length_um=1200.0,
-    z_depth_um=1000.0,
-    spatial_resolution_um=1.0,
+    x_length_um=1200.0,           # µm
+    y_length_um=1200.0,           # µm
+    z_depth_um=1000.0,            # µm
+    spatial_resolution_um=1.0,    # µm
 )
 
 result = compute_single_point(beam, material, domain)
