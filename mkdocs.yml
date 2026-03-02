@@ -76,5 +76,6 @@ plugins:
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
+  - Methodology: methodology.md
   - API Reference:
       - Overview: api/reference.md

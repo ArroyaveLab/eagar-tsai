@@ -98,47 +98,10 @@ result = compute_melt_pool(
 
 ---
 
-## Physics
+## References
 
-**Reference:** T. W. Eagar and N.-S. Tsai, "Temperature Fields Produced by Traveling Distributed Heat Sources," *Welding Journal (Research Supplement)*, December 1983, pp. 346-s–354-s.
-
-**C integrand reformulation:** Sasha Rubenchik, LLNL, 2015.
-
-Thermal diffusivity:
-```
-alpha = k / (rho * cp)
-```
-
-Non-dimensional parameter:
-```
-p = alpha / (v * sigma)
-```
-
-Prefactor:
-```
-Ts = (A * P) / (pi * (k/alpha) * sqrt(pi * alpha * v * sigma^3))
-```
-
-Temperature field at (x, y, z):
-```
-T = T0 + Ts * integral_0^inf f(t, x, y, z, p) dt
-```
-
-Integrand:
-```
-f(t,x,y,z,p) = 1 / ((4pt+1) * sqrt(t))
-               * exp(-z^2/(4t) - (y^2 + (x-t)^2)/(4pt+1))
-```
-
-Ambient temperature: `T0 = 300 K`.
-
-### Assumptions
-
-- Semi-infinite solid.
-- Constant material properties at liquidus.
-- No melt flow, vaporization, or latent heat effects.
-- Gaussian heat source with constant absorptivity.
-- Steady-state moving source.
+- T. W. Eagar and N.-S. Tsai, "Temperature Fields Produced by Traveling Distributed Heat Sources," *Welding Journal (Research Supplement)*, December 1983, pp. 346-s–354-s.
+- C integrand reformulation: Sasha Rubenchik, LLNL, 2015.
 
 ---
 
