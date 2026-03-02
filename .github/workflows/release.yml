@@ -8,9 +8,54 @@ jobs:
   test:
     uses: ./.github/workflows/test.yml
 
-  release:
-    name: "Build and publish release"
+  build_wheels:
+    name: Build wheels (${{ matrix.os }})
     needs: test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6.0.2
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.22.0
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheels-${{ matrix.os }}
+          path: ./wheelhouse/*.whl
+
+  build_sdist:
+    name: Build sdist
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6.0.2
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7.3.0
+        with:
+          enable-cache: true
+
+      - name: Build sdist
+        run: uv build --sdist
+
+      - name: Upload sdist
+        uses: actions/upload-artifact@v4
+        with:
+          name: cibw-sdist
+          path: dist/*.tar.gz
+
+  publish:
+    name: Publish to PyPI
+    needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -19,24 +64,12 @@ jobs:
       contents: read
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6.0.2
-
-      - name: Set up Python
-        uses: actions/setup-python@v6.2.0
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
         with:
-          python-version-file: ".python-version"
+          pattern: cibw-*
+          path: dist
+          merge-multiple: true
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7.3.0
-        with:
-          enable-cache: true
-
-      - name: Install dependencies
-        run: uv sync --locked --all-extras --dev
-
-      - name: Build
-        run: uv build
-
-      - name: Publish
-        run: uv publish
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
