@@ -173,20 +173,23 @@ def compute_melt_pool(
         TypeError: If ``data`` is not a pandas DataFrame.
         ValueError: If any required column is absent from ``data``.
 
-    Example:
-        >>> import pandas as pd
-        >>> from eagar_tsai import compute_melt_pool
-        >>> df = pd.DataFrame({
-        ...     "velocity_m_s": [0.5],
-        ...     "power_w": [200.0],
-        ...     "beam_diameter_m": [100e-6],
-        ...     "absorptivity": [0.35],
-        ...     "liquidus_temperature_k": [1700.0],
-        ...     "thermal_conductivity_w_mk": [30.0],
-        ...     "density_kg_m3": [7800.0],
-        ...     "specific_heat_j_kgk": [700.0],
-        ... })
-        >>> result = compute_melt_pool(df, workers=1)
+    Examples:
+        ```python
+        import pandas as pd
+        from eagar_tsai import compute_melt_pool
+
+        df = pd.DataFrame({
+            "velocity_m_s": [0.5],
+            "power_w": [200.0],
+            "beam_diameter_m": [100e-6],
+            "absorptivity": [0.35],
+            "liquidus_temperature_k": [1700.0],
+            "thermal_conductivity_w_mk": [30.0],
+            "density_kg_m3": [7800.0],
+            "specific_heat_j_kgk": [700.0],
+        })
+        result = compute_melt_pool(df, workers=1)
+        ```
     """
     if not isinstance(data, pd.DataFrame):
         raise TypeError(f"data must be a pandas DataFrame, got {type(data).__name__!r}")
