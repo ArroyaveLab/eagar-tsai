@@ -115,7 +115,7 @@ def _process_chunk(
     if output_dir is not None:
         out_path = Path(output_dir)
         out_path.mkdir(parents=True, exist_ok=True)
-        csv_path = out_path / f"ET_v3_OUT_{chunk_idx}.csv"
+        csv_path = out_path / f"ET_{chunk_idx}.csv"
         out_df.to_csv(csv_path, index=False)
         _logger.debug("Wrote chunk %d to %s", chunk_idx, csv_path)
 

@@ -148,11 +148,11 @@ class TestProcessChunkCsvOutput:
     """output_dir triggers CSV writing to disk."""
 
     def test_csv_file_is_created(self) -> None:
-        """A CSV named ET_v3_OUT_<chunk_idx>.csv is created inside output_dir."""
+        """A CSV named ET_<chunk_idx>.csv is created inside output_dir."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             _process_chunk((3, _chunk(), _SMALL_DOMAIN, Path(tmp_dir)))
 
-            expected = Path(tmp_dir) / "ET_v3_OUT_3.csv"
+            expected = Path(tmp_dir) / "ET_3.csv"
             assert expected.exists(), f"Expected CSV not found: {expected}"
 
     def test_csv_content_matches_returned_dataframe(self) -> None:
@@ -160,7 +160,7 @@ class TestProcessChunkCsvOutput:
         with tempfile.TemporaryDirectory() as tmp_dir:
             result = _process_chunk((0, _chunk(), _SMALL_DOMAIN, Path(tmp_dir)))
 
-            loaded = pd.read_csv(Path(tmp_dir) / "ET_v3_OUT_0.csv")
+            loaded = pd.read_csv(Path(tmp_dir) / "ET_0.csv")
 
             assert list(loaded.columns) == list(result.columns)
             for col in _OUTPUT_COLUMNS:
@@ -175,7 +175,7 @@ class TestProcessChunkCsvOutput:
             _process_chunk((0, _chunk(), _SMALL_DOMAIN, nested))
 
             assert nested.is_dir()
-            assert (nested / "ET_v3_OUT_0.csv").exists()
+            assert (nested / "ET_0.csv").exists()
 
     def test_no_csv_when_output_dir_is_none(self) -> None:
         """Passing output_dir=None leaves no files on disk."""
