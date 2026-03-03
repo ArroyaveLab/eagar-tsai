@@ -140,7 +140,7 @@ def compute_melt_pool(
     data: pd.DataFrame,
     *,
     domain: SimulationDomain | None = None,
-    chunk_size: int = 1,
+    chunk_size: int = 50,
     workers: int | None = None,
     output_dir: Path | str | None = None,
 ) -> pd.DataFrame:
@@ -157,6 +157,7 @@ def compute_melt_pool(
             1200 x 1200 x 1000 um domain is used for every row.
         chunk_size: Number of rows per chunk.  Larger values reduce
             multiprocessing overhead at the cost of coarser progress.
+            Defaults to 50.
         workers: Maximum number of worker processes.  ``None`` or ``<= 1``
             runs serially in the calling process (useful for debugging
             and platforms where forking is unreliable).
