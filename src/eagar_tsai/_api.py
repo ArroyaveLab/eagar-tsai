@@ -158,9 +158,8 @@ def compute_melt_pool(
         chunk_size: Number of rows per chunk.  Larger values reduce
             multiprocessing overhead at the cost of coarser progress.
             Defaults to 50.
-        workers: Maximum number of worker processes.  ``None`` or ``<= 1``
-            runs serially in the calling process (useful for debugging
-            and platforms where forking is unreliable).
+        workers: Worker processes to use.  ``1`` or ``None`` runs
+            serially; ``-1`` uses all available cores.
         output_dir: If provided, each processed chunk is saved as a CSV
             file under this directory before results are concatenated.
 
@@ -173,6 +172,7 @@ def compute_melt_pool(
     Raises:
         TypeError: If ``data`` is not a pandas DataFrame.
         ValueError: If any required column is absent from ``data``.
+        ValueError: If ``workers`` is not a positive integer, ``-1``, or ``None``.
 
     Examples:
         ```python
@@ -195,18 +195,21 @@ def compute_melt_pool(
     if not isinstance(data, pd.DataFrame):
         raise TypeError(f"data must be a pandas DataFrame, got {type(data).__name__!r}")
     _validate_columns(data)
+    if workers is not None and workers != -1 and workers < 1:
+        raise ValueError(f"workers must be a positive integer or None, got {workers!r}")
 
     out_dir = Path(output_dir) if output_dir is not None else None
 
     chunks = [data.iloc[i : i + chunk_size] for i in range(0, len(data), chunk_size)]
     params = [(idx, chunk, domain, out_dir) for idx, chunk in enumerate(chunks)]
 
-    if workers is None or workers <= 1:
+    if workers is None or workers == 1:
         _logger.info("Running serially (%d chunk(s)).", len(chunks))
         results = [_process_chunk(p) for p in params]
     else:
-        _logger.info("Running with %d worker(s), %d chunk(s).", workers, len(chunks))
-        with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
+        max_workers = None if workers == -1 else workers
+        _logger.info("Running with %s worker(s), %d chunk(s).", "all" if workers == -1 else workers, len(chunks))
+        with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
             results = list(executor.map(_process_chunk, params))
 
     return pd.concat(results, ignore_index=True)
