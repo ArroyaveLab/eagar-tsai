@@ -94,6 +94,24 @@ class TestCIntegrand:
             )
 
 
+class TestComputeSinglePointNonConvergence:
+    """Tests for the domain-expansion failure path (no computation needed)."""
+
+    def test_runtime_error_when_max_iters_zero(
+        self,
+        steel_beam: BeamParameters,
+        steel_material: MaterialProperties,
+        small_domain: SimulationDomain,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """RuntimeError is raised when _MAX_EXPANSION_ITERS is exhausted."""
+        import eagar_tsai._core as core_module
+
+        monkeypatch.setattr(core_module, "_MAX_EXPANSION_ITERS", 0)
+        with pytest.raises(RuntimeError, match="Domain expansion did not converge"):
+            compute_single_point(steel_beam, steel_material, small_domain)
+
+
 @pytest.mark.slow
 class TestComputeSinglePoint:
     """Integration tests for compute_single_point (marked slow)."""
