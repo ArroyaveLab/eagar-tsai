@@ -94,6 +94,10 @@ def _get_integrand() -> Callable[..., float] | object:
         return eagar_tsai_integrand
 
 
+_INTEGRAND = _get_integrand()
+"""Cached integrand: LowLevelCallable (C extension) or Python fallback."""
+
+
 def _build_grids(
     beam: BeamParameters,
     domain: SimulationDomain,
@@ -207,11 +211,10 @@ def compute_single_point(
     if domain is None:
         domain = _DEFAULT_DOMAIN
 
-    integrand = _get_integrand()
     sigma_um = beam.sigma * 1.0e6  # metres -> um for domain expansion steps
 
     for iteration in range(_MAX_EXPANSION_ITERS):
-        T_xy, T_xz = _compute_temperature_planes(beam, material, domain, integrand)
+        T_xy, T_xz = _compute_temperature_planes(beam, material, domain, _INTEGRAND)
 
         peak_T = float(np.amax(T_xy))
         min_T = float(np.amin(T_xy))
