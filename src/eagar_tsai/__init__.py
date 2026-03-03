@@ -27,7 +27,6 @@ Reformulation: Sasha Rubenchik, LLNL, 2015.
 from ._api import REQUIRED_COLUMNS, compute_melt_pool
 from ._core import compute_single_point
 from ._types import (
-    _T0_K,
     BeamParameters,
     MaterialProperties,
     MeltPoolResult,
@@ -43,6 +42,5 @@ __all__ = [
     "REQUIRED_COLUMNS",
     "compute_melt_pool",
     "compute_single_point",
-    "_T0_K",
     "__version__",
 ]

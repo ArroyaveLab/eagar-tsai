@@ -10,7 +10,6 @@ __all__ = [
     "MaterialProperties",
     "SimulationDomain",
     "MeltPoolResult",
-    "_T0_K",
 ]
 
 _T0_K: float = 300.0
