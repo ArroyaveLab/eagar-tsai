@@ -196,7 +196,7 @@ def compute_melt_pool(
         raise TypeError(f"data must be a pandas DataFrame, got {type(data).__name__!r}")
     _validate_columns(data)
     if workers is not None and workers != -1 and workers < 1:
-        raise ValueError(f"workers must be a positive integer or None, got {workers!r}")
+        raise ValueError(f"workers must be a positive integer, -1 (all cores), or None, got {workers!r}")
 
     out_dir = Path(output_dir) if output_dir is not None else None
 
