@@ -176,14 +176,14 @@ class MeltPoolResult:
     @property
     def length_um(self) -> float:
         """Melt pool length in micrometres."""
-        return self.length * 1.0e6
+        return self.length / _UM_TO_M
 
     @property
     def width_um(self) -> float:
         """Melt pool full width in micrometres."""
-        return self.width * 1.0e6
+        return self.width / _UM_TO_M
 
     @property
     def depth_um(self) -> float:
         """Melt pool depth in micrometres."""
-        return self.depth * 1.0e6
+        return self.depth / _UM_TO_M
