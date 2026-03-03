@@ -111,7 +111,7 @@ print(f"Depth:  {result.depth_um:.1f} µm")
 
 ```python
 # Use all available CPU cores
-result = compute_melt_pool(df, workers=None)   # None → serial
+result = compute_melt_pool(df, workers=-1)
 
 # Use 8 workers, process 50 rows per chunk
 result = compute_melt_pool(df, workers=8, chunk_size=50)
@@ -130,6 +130,6 @@ result = compute_melt_pool(
     df,
     workers=4,
     chunk_size=50,
-    output_dir=Path("calc_files"),  # saves ET_v3_OUT_0.csv, ET_v3_OUT_1.csv, ...
+    output_dir=Path("calc_files"),  # saves ET_0000.csv, ET_0001.csv, ...
 )
 ```

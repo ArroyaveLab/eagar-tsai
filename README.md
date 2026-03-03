@@ -64,7 +64,7 @@ Commonly overridden parameters:
 ```python
 result = compute_melt_pool(
     df,
-    workers=4,                # parallel worker processes (default: 1, serial)
+    workers=4,                # parallel worker processes (default: None, serial)
     chunk_size=50,            # rows per worker chunk (default: 50)
     output_dir="CalcFiles/",  # write per-chunk CSVs (default: None)
 )
