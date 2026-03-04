@@ -36,4 +36,4 @@ jobs:
         run: uv sync --all-extras
 
       - name: Run fast tests
-        run: uv run pytest tests/ --cov=eagar_tsai --cov-report=xml -m "not slow"
+        run: uv run pytest tests/ -m "not slow"
