@@ -28,7 +28,7 @@ class TestBeamParameters:
         """Dataclass fields cannot be mutated."""
         beam = BeamParameters(beam_diameter=100e-6, power=200.0, velocity=0.5, absorptivity=0.35)
         with pytest.raises((AttributeError, TypeError)):
-            beam.power = 300.0  # type: ignore[misc]
+            beam.power = 300.0  # ty: ignore[invalid-assignment]
 
     @pytest.mark.parametrize(
         "kwargs",
@@ -120,7 +120,7 @@ class TestSimulationDomain:
         """SimulationDomain is immutable."""
         d = SimulationDomain()
         with pytest.raises((AttributeError, TypeError)):
-            d.x_length_um = 500.0  # type: ignore[misc]
+            d.x_length_um = 500.0  # ty: ignore[invalid-assignment]
 
     def test_invalid_negative_dimension(self) -> None:
         """Non-positive dimension raises ValueError."""

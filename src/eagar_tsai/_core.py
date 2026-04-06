@@ -80,9 +80,9 @@ def _get_integrand() -> Callable[..., float] | object:
     """
     try:
         try:
-            from scipy import LowLevelCallable  # SciPy >= 1.14
+            from scipy import LowLevelCallable
         except ImportError:
-            from scipy.integrate import LowLevelCallable  # type: ignore[no-redef]
+            from scipy.integrate import LowLevelCallable  # ty: ignore[unresolved-import]
 
         from ._integrand_ext import get_integrand_capsule
 

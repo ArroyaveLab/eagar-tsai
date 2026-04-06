@@ -62,7 +62,7 @@ class TestCIntegrand:
         try:
             from scipy import LowLevelCallable
         except ImportError:
-            from scipy.integrate import LowLevelCallable
+            from scipy.integrate import LowLevelCallable  # ty: ignore[unresolved-import]
 
         from eagar_tsai._integrand_ext import get_integrand_capsule
 
@@ -74,7 +74,7 @@ class TestCIntegrand:
         try:
             from scipy import LowLevelCallable
         except ImportError:
-            from scipy.integrate import LowLevelCallable
+            from scipy.integrate import LowLevelCallable  # ty: ignore[unresolved-import]
         from scipy.integrate import quad
 
         from eagar_tsai._integrand_ext import get_integrand_capsule

@@ -58,7 +58,7 @@ class TestComputeMeltPoolValidation:
     def test_raises_on_non_dataframe(self) -> None:
         """TypeError if input is not a DataFrame."""
         with pytest.raises(TypeError, match="pandas DataFrame"):
-            compute_melt_pool({"not": "a dataframe"})  # type: ignore[arg-type]
+            compute_melt_pool({"not": "a dataframe"})  # ty: ignore[invalid-argument-type]
 
     def test_raises_on_missing_column(self) -> None:
         """ValueError lists the missing column."""
