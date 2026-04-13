@@ -5,13 +5,19 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
+    assignees:
+      - "dogusariturk"
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
+    assignees:
+      - "dogusariturk"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
+    assignees:
+      - "dogusariturk"
