@@ -25,7 +25,7 @@ jobs:
         uses: pypa/cibuildwheel@v3.4.1
 
       - name: Upload wheels
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: cibw-wheels-${{ matrix.os }}
           path: ./wheelhouse/*.whl
@@ -48,7 +48,7 @@ jobs:
         run: uv build --sdist
 
       - name: Upload sdist
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: cibw-sdist
           path: dist/*.tar.gz
