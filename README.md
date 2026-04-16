@@ -74,39 +74,39 @@ result = compute_melt_pool(
 
 ### Required Input Columns
 
-| Column | Unit | Description                      |
-|--------|------|----------------------------------|
-| `velocity_m_s` | m/s | Scan velocity                    |
-| `power_w` | W | Laser power                      |
-| `beam_diameter_m` | m | Beam diameter (2σ)               |
-| `absorptivity` | — | Absorptivity (0, 1]              |
-| `liquidus_temperature_k` | K | Liquidus temperature             |
-| `thermal_conductivity_w_mk` | W/(m·K) | Thermal conductivity at liquidus |
-| `density_kg_m3` | kg/m³ | Density                          |
-| `specific_heat_j_kgk` | J/(kg·K) | Specific heat at liquidus        |
+| Column                      | Unit     | Description                      |
+|-----------------------------|----------|----------------------------------|
+| `velocity_m_s`              | m/s      | Scan velocity                    |
+| `power_w`                   | W        | Laser power                      |
+| `beam_diameter_m`           | m        | Beam diameter (2σ)               |
+| `absorptivity`              | —        | Absorptivity (0, 1]              |
+| `liquidus_temperature_k`    | K        | Liquidus temperature             |
+| `thermal_conductivity_w_mk` | W/(m·K)  | Thermal conductivity at liquidus |
+| `density_kg_m3`             | kg/m³    | Density                          |
+| `specific_heat_j_kgk`       | J/(kg·K) | Specific heat at liquidus        |
 
 ### Output Columns Added to the DataFrame
 
-| Column | Unit |
-|--------|------|
-| `melt_length` | m |
-| `melt_width` | m |
-| `melt_depth` | m |
-| `melt_length_um` | µm |
-| `melt_width_um` | µm |
-| `melt_depth_um` | µm |
-| `peak_temperature` | K |
-| `min_temperature` | K |
+| Column             | Unit |
+|--------------------|------|
+| `melt_length`      | m    |
+| `melt_width`       | m    |
+| `melt_depth`       | m    |
+| `melt_length_um`   | µm   |
+| `melt_width_um`    | µm   |
+| `melt_depth_um`    | µm   |
+| `peak_temperature` | K    |
+| `min_temperature`  | K    |
 
 ---
 
 ## References
 
-- T. W. Eagar and N.-S. Tsai, "Temperature Fields Produced by Traveling Distributed Heat Sources," *Welding Journal (Research Supplement)*, December 1983, pp. 346-s–354-s.
+- T. W. Eagar and N.-S. Tsai, "Temperature Fields Produced by Traveling Distributed Heat Sources," *Welding Journal (Research Supplement)*, December 1983, pp. 346-s–354-s.
 - C integrand reformulation: Sasha Rubenchik, LLNL, 2015.
 
 ---
 
 ## License
 
-This project is licensed under the GNU GPLv3 License. See the [LICENSE](./LICENSE) file for details.
+This project is licensed under the GNU GPLv3 License. See the [LICENSE](https://github.com/ArroyaveLab/eagar-tsai/blob/main/LICENSE) file for details.
