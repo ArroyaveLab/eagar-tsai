@@ -1,8 +1,8 @@
 <div align="center">
 
-# eagar-tsai
-
 <img width="200" height="200" alt="eagar-tsai-logo" src="https://github.com/user-attachments/assets/301d7569-b2c6-4e01-abaf-660d69689e90" />
+
+# eagar-tsai
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://opensource.org/license/gpl-3-0)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue)
@@ -110,3 +110,9 @@ result = compute_melt_pool(
 ## License
 
 This project is licensed under the GNU GPLv3 License. See the [LICENSE](https://github.com/ArroyaveLab/eagar-tsai/blob/main/LICENSE) file for details.
+
+---
+
+## Citation
+
+We are currently preparing a preprint for publication.
