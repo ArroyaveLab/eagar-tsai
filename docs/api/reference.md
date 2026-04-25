@@ -16,6 +16,12 @@
 
 ::: eagar_tsai.MeltPoolResult
 
+::: eagar_tsai.TemperatureField
+
+## Plotting
+
+::: eagar_tsai.plot.plot_temperature_field
+
 ## Integrand
 
 ::: eagar_tsai._core.eagar_tsai_integrand

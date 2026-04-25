@@ -75,7 +75,7 @@ result.to_csv("melt_pool_results.csv", index=False)
 
 ## Single-Point Computation
 
-For a single parameter set, use `compute_single_point` directly:
+For a single parameter set, use `compute_single_point` directly. It returns a `MeltPoolResult` that always includes the full `TemperatureField`.
 
 ```python
 from eagar_tsai import (
@@ -105,6 +105,40 @@ result = compute_single_point(beam, material, domain)
 print(f"Length: {result.length_um:.1f} µm")
 print(f"Width:  {result.width_um:.1f} µm")
 print(f"Depth:  {result.depth_um:.1f} µm")
+```
+
+## Temperature Field Visualization
+
+`compute_single_point` returns a `MeltPoolResult` that always includes a `TemperatureField` with direct access to the raw arrays and a built-in plot method.
+
+```python
+from eagar_tsai import (
+    BeamParameters, MaterialProperties, SimulationDomain, compute_single_point
+)
+
+beam = BeamParameters(beam_diameter=100e-6, power=200.0, velocity=0.5, absorptivity=0.35)
+mat  = MaterialProperties(liquidus_temperature=1700.0, thermal_conductivity=30.0,
+                          density=7800.0, specific_heat=700.0)
+dom  = SimulationDomain(x_length_um=320, y_length_um=110, z_depth_um=60,
+                        spatial_resolution_um=5)
+
+result = compute_single_point(beam, mat, dom)
+
+# Access raw arrays via the embedded TemperatureField
+print(result.temperature_field.T_xy.shape)   # (ny, nx) — surface plane in Kelvin
+print(result.temperature_field.T_xz.shape)   # (nz, nx) — depth cross-section in Kelvin
+
+# Render a two-panel figure (x-y surface heatmap + x-z depth heatmap)
+fig = result.plot(output="temperature_field.png")
+# equivalently: result.temperature_field.plot(output="temperature_field.png")
+```
+
+The standalone convenience function skips constructing the `MeltPoolResult` object explicitly:
+
+```python
+from eagar_tsai.plot import plot_temperature_field
+
+fig = plot_temperature_field(beam, mat, dom, output="temperature_field.png")
 ```
 
 ## Parallel Processing

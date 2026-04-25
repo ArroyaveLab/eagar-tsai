@@ -33,6 +33,7 @@ The model computes temperature fields produced by a Gaussian laser beam moving o
 - **Batch DataFrame API** with optional multiprocessing parallelism
 - **Immutable dataclasses** for beam, material, and domain parameters
 - **Iterative domain expansion** — automatically enlarges the simulation grid if the melt pool touches a boundary
+- **Temperature field access** — `compute_single_point` returns a `MeltPoolResult` that always includes the full 2-D surface and depth temperature planes as an embedded `TemperatureField`; `result.plot()` produces a two-panel heatmap figure
 
 ## Installation
 
