@@ -31,7 +31,9 @@ from ._types import (
     MaterialProperties,
     MeltPoolResult,
     SimulationDomain,
+    TemperatureField,
 )
+from .plot import plot_temperature_field
 
 __version__ = "0.1.0"
 __all__ = [
@@ -39,8 +41,10 @@ __all__ = [
     "MaterialProperties",
     "MeltPoolResult",
     "SimulationDomain",
+    "TemperatureField",
     "REQUIRED_COLUMNS",
     "compute_melt_pool",
     "compute_single_point",
+    "plot_temperature_field",
     "__version__",
 ]
