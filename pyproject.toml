@@ -6,13 +6,14 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "GPL-3.0-or-later" }
 authors = [
-    { name = "Brent Vela", email = "brentvela@tamu.edu"},
-    { name = "Doguhan Sariturk", email = "dogu.sariturk@gmail.com" }
+    { name = "Doguhan Sariturk", email = "dogu.sariturk@gmail.com" },
+    { name = "Brent Vela", email = "brentvela@tamu.edu"}
 ]
 dependencies = [
     "numpy>=1.26",
     "pandas>=2.1",
     "scipy>=1.11",
+    "matplotlib>=3.7",
 ]
 
 [project.optional-dependencies]
@@ -66,6 +67,7 @@ select = [
 ]
 ignore = [
     "PLC0415", # Import outside top level
+    "PLR0913", # Too many arguments in function definition
     "PLR2004", # magic value assigned to variable in function
     "N806", # variable in function should be lowercase
 ]
