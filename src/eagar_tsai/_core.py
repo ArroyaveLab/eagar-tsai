@@ -29,6 +29,7 @@ from ._types import (
     MaterialProperties,
     MeltPoolResult,
     SimulationDomain,
+    TemperatureField,
 )
 
 if TYPE_CHECKING:
@@ -110,7 +111,7 @@ def _build_grids(
 
     Returns:
         Tuple (xrange, yrange, zrange) of 1-D ndarrays in metres.
-        xrange starts slightly behind the beam centre to capture the
+        xrange starts slightly behind the beam center to capture the
         trailing melt pool; yrange runs from 0 to domain.y_length
         (half-domain, by symmetry); zrange runs from -domain.z_depth to 0.
     """
@@ -196,17 +197,15 @@ def compute_single_point(
     Args:
         beam: Laser beam and process parameters.
         material: Material thermal properties.
-        domain: Spatial domain; defaults to _DEFAULT_DOMAIN
-            (1200 x 1200 x 1000 um, 1 um).
+        domain: Spatial domain; defaults to 1200 x 1200 x 1000 um, 1 um.
 
     Returns:
-        MeltPoolResult with melt pool geometry and temperature extremes.
-        All lengths are zero if the peak temperature does not exceed the
-        liquidus temperature.
+        A ``MeltPoolResult`` containing melt pool dimensions, temperature
+        extremes, and the full ``TemperatureField``. All lengths are zero
+        if the peak temperature does not exceed the liquidus temperature.
 
     Raises:
-        RuntimeError: If domain expansion does not converge within
-            _MAX_EXPANSION_ITERS iterations.
+        RuntimeError: If domain expansion does not converge within _MAX_EXPANSION_ITERS iterations.
     """
     if domain is None:
         domain = _DEFAULT_DOMAIN
@@ -215,32 +214,54 @@ def compute_single_point(
 
     for iteration in range(_MAX_EXPANSION_ITERS):
         T_xy, T_xz = _compute_temperature_planes(beam, material, domain, _INTEGRAND)
+        xrange, yrange, zrange = _build_grids(beam, domain)
 
         peak_T = float(np.amax(T_xy))
         min_T = float(np.amin(T_xy))
 
         if peak_T <= material.liquidus_temperature:
+            tf = TemperatureField(
+                T_xy=T_xy,
+                T_xz=T_xz,
+                x_range_m=xrange,
+                y_range_m=yrange,
+                z_range_m=zrange,
+                liquidus_temperature_k=material.liquidus_temperature,
+                melt_width_m=0.0,
+                melt_depth_m=0.0,
+            )
             return MeltPoolResult(
                 length=0.0,
                 width=0.0,
                 depth=0.0,
                 peak_temperature=peak_T,
                 min_temperature=min_T,
+                temperature_field=tf,
             )
 
-        xrange, yrange, zrange = _build_grids(beam, domain)
         t_melt = material.liquidus_temperature
 
         melt_x_mask = T_xy[0, :] > t_melt
         if not np.any(melt_x_mask):
-            # Peak is above liquidus but the centreline row doesn't cross it —
+            # Peak is above liquidus but the centerline row doesn't cross it
             # shouldn't happen for a Gaussian source; treat as no melt pool.
+            tf = TemperatureField(
+                T_xy=T_xy,
+                T_xz=T_xz,
+                x_range_m=xrange,
+                y_range_m=yrange,
+                z_range_m=zrange,
+                liquidus_temperature_k=material.liquidus_temperature,
+                melt_width_m=0.0,
+                melt_depth_m=0.0,
+            )
             return MeltPoolResult(
                 length=0.0,
                 width=0.0,
                 depth=0.0,
                 peak_temperature=peak_T,
                 min_temperature=min_T,
+                temperature_field=tf,
             )
 
         melt_x_indices = np.where(melt_x_mask)[0]
@@ -299,12 +320,24 @@ def compute_single_point(
             domain = domain.expanded(dz_um=sigma_um)
             continue
 
+        melt_width = y_half_length * 2.0  # half-domain symmetry
+        tf = TemperatureField(
+            T_xy=T_xy,
+            T_xz=T_xz,
+            x_range_m=xrange,
+            y_range_m=yrange,
+            z_range_m=zrange,
+            liquidus_temperature_k=material.liquidus_temperature,
+            melt_width_m=melt_width,
+            melt_depth_m=z_length,
+        )
         return MeltPoolResult(
             length=melt_length,
-            width=y_half_length * 2.0,  # half-domain symmetry
+            width=melt_width,
             depth=z_length,
             peak_temperature=peak_T,
             min_temperature=min_T,
+            temperature_field=tf,
         )
 
     raise RuntimeError(

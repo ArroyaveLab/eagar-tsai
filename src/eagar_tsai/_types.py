@@ -4,12 +4,18 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import matplotlib.figure
+    import numpy as np
 
 __all__ = [
     "BeamParameters",
     "MaterialProperties",
     "SimulationDomain",
     "MeltPoolResult",
+    "TemperatureField",
 ]
 
 _T0_K: float = 300.0
@@ -155,9 +161,72 @@ class SimulationDomain:
         )
 
 
+@dataclass(eq=False)
+class TemperatureField:
+    """Full 2-D temperature field associated with a MeltPoolResult.
+
+    Attributes:
+        T_xy: Temperature on the x-y plane (z=0, surface). Shape (ny, nx), Kelvin.
+        T_xz: Temperature on the x-z plane (y=0, centerline). Shape (nz, nx), Kelvin.
+        x_range_m: 1-D x-coordinate array in metres (scan direction).
+        y_range_m: 1-D y-coordinate array in metres (cross-scan, half-domain).
+        z_range_m: 1-D z-coordinate array in metres (negative values = depth below surface).
+        liquidus_temperature_k: Liquidus temperature in Kelvin, used for contour plots.
+        melt_width_m: Melt pool full width in metres, used for width annotation in plots.
+        melt_depth_m: Melt pool depth in metres, used for depth annotation in plots.
+    """
+
+    T_xy: np.ndarray = field(repr=False)
+    T_xz: np.ndarray = field(repr=False)
+    x_range_m: np.ndarray = field(repr=False)
+    y_range_m: np.ndarray = field(repr=False)
+    z_range_m: np.ndarray = field(repr=False)
+    liquidus_temperature_k: float
+    melt_width_m: float = 0.0
+    melt_depth_m: float = 0.0
+
+    @property
+    def x_range_um(self) -> np.ndarray:
+        """x-coordinate array in micrometres."""
+        return self.x_range_m / _UM_TO_M
+
+    @property
+    def y_range_um(self) -> np.ndarray:
+        """y-coordinate array in micrometres."""
+        return self.y_range_m / _UM_TO_M
+
+    @property
+    def z_range_um(self) -> np.ndarray:
+        """z-coordinate array in micrometres (negative values = depth below surface)."""
+        return self.z_range_m / _UM_TO_M
+
+    def plot(
+        self,
+        *,
+        output: str | None = None,
+        annotate: bool = True,
+    ) -> matplotlib.figure.Figure:
+        """Render a two-panel temperature field figure (x-y surface and x-z depth cross-section).
+
+        Args:
+            output: File path to save the figure. When ``None`` the figure is returned without saving.
+            annotate: When ``True``, overlay width and depth annotations derived from
+                ``melt_width_m`` and ``melt_depth_m``.
+
+        Returns:
+            A ``matplotlib.figure.Figure``.
+
+        Raises:
+            ImportError: If matplotlib is not installed.
+        """
+        from eagar_tsai.plot import _render_temperature_panels
+
+        return _render_temperature_panels(self, output=output, annotate=annotate)
+
+
 @dataclass(frozen=True)
 class MeltPoolResult:
-    """Melt pool geometry and temperature extremes.
+    """Melt pool geometry, temperature extremes, and associated temperature field.
 
     Attributes:
         length: Melt pool length along x in metres.
@@ -165,6 +234,7 @@ class MeltPoolResult:
         depth: Melt pool depth along z in metres.
         peak_temperature: Maximum temperature in the domain in Kelvin.
         min_temperature: Minimum temperature in the domain in Kelvin.
+        temperature_field: Full 2-D temperature field for the x-y and x-z planes.
     """
 
     length: float
@@ -172,6 +242,7 @@ class MeltPoolResult:
     depth: float
     peak_temperature: float
     min_temperature: float
+    temperature_field: TemperatureField = field(compare=False)
 
     @property
     def length_um(self) -> float:
@@ -187,3 +258,25 @@ class MeltPoolResult:
     def depth_um(self) -> float:
         """Melt pool depth in micrometres."""
         return self.depth / _UM_TO_M
+
+    def plot(
+        self,
+        *,
+        output: str | None = None,
+        annotate: bool = True,
+    ) -> matplotlib.figure.Figure:
+        """Render a two-panel temperature field figure (x-y surface and x-z depth cross-section).
+
+        Delegates to ``self.temperature_field.plot()``.
+
+        Args:
+            output: File path to save the figure. When ``None`` the figure is returned without saving.
+            annotate: When ``True``, overlay width and depth annotations.
+
+        Returns:
+            A ``matplotlib.figure.Figure``.
+
+        Raises:
+            ImportError: If matplotlib is not installed.
+        """
+        return self.temperature_field.plot(output=output, annotate=annotate)

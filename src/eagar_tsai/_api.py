@@ -10,7 +10,7 @@ from __future__ import annotations
 import concurrent.futures
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 
@@ -35,7 +35,7 @@ REQUIRED_COLUMNS: list[str] = [
     "specific_heat_j_kgk",
 ]
 
-_NAN_RESULT: dict[str, float] = {
+_NAN_RESULT: dict[str, Any] = {
     "melt_length": float("nan"),
     "melt_width": float("nan"),
     "melt_depth": float("nan"),
@@ -50,18 +50,21 @@ _NAN_RESULT: dict[str, float] = {
 def _process_row(
     row: pd.Series,
     domain: SimulationDomain | None,
-) -> dict[str, float]:
+    return_field: bool = False,
+) -> dict[str, Any]:
     """Process a single DataFrame row and return output columns as a dict.
 
     Args:
         row: A pandas Series with the required input columns.
         domain: Optional custom simulation domain.
+        return_field: When ``True``, include ``temperature_field`` in the returned dict.
 
     Returns:
         Dictionary with keys:
         ``melt_length``, ``melt_width``, ``melt_depth``,
         ``melt_length_um``, ``melt_width_um``, ``melt_depth_um``,
-        ``peak_temperature``, ``min_temperature``.
+        ``peak_temperature``, ``min_temperature``, and optionally
+        ``temperature_field`` when ``return_field=True``.
     """
     beam = BeamParameters(
         beam_diameter=float(row["beam_diameter_m"]),
@@ -76,7 +79,7 @@ def _process_row(
         specific_heat=float(row["specific_heat_j_kgk"]),
     )
     result = compute_single_point(beam, material, domain)
-    return {
+    out: dict[str, Any] = {
         "melt_length": result.length,
         "melt_width": result.width,
         "melt_depth": result.depth,
@@ -86,29 +89,35 @@ def _process_row(
         "peak_temperature": result.peak_temperature,
         "min_temperature": result.min_temperature,
     }
+    if return_field:
+        out["temperature_field"] = result.temperature_field
+    return out
 
 
 def _process_chunk(
-    params: tuple[int, pd.DataFrame, SimulationDomain | None, Path | None],
+    params: tuple[int, pd.DataFrame, SimulationDomain | None, Path | None, bool],
 ) -> pd.DataFrame:
     """Process a chunk of rows and optionally save to CSV.
 
     Args:
-        params: Tuple of ``(chunk_index, chunk_df, domain, output_dir)``.
+        params: Tuple of ``(chunk_index, chunk_df, domain, output_dir, return_field)``.
 
     Returns:
         The chunk DataFrame with output columns appended.
     """
-    chunk_idx, chunk, domain, output_dir = params
+    chunk_idx, chunk, domain, output_dir, return_field = params
     chunk = chunk.reset_index(drop=True)
 
-    output_records: list[dict[str, float]] = []
+    output_records: list[dict[str, Any]] = []
     for _, row in chunk.iterrows():
         try:
-            output_records.append(_process_row(row, domain))
+            output_records.append(_process_row(row, domain, return_field))
         except Exception as exc:
             _logger.error("Error in chunk %d, row %s: %s", chunk_idx, row.name, exc)
-            output_records.append(_NAN_RESULT.copy())
+            nan_row: dict[str, Any] = _NAN_RESULT.copy()
+            if return_field:
+                nan_row["temperature_field"] = None
+            output_records.append(nan_row)
 
     out_df = pd.concat([chunk, pd.DataFrame(output_records, index=chunk.index)], axis=1)
 
@@ -143,6 +152,7 @@ def compute_melt_pool(
     chunk_size: int = 50,
     workers: int | None = None,
     output_dir: Path | str | None = None,
+    return_field: bool = True,
 ) -> pd.DataFrame:
     """Compute melt pool dimensions for every row in a DataFrame.
 
@@ -151,23 +161,21 @@ def compute_melt_pool(
     a copy of ``data`` and returned.
 
     Args:
-        data: Input DataFrame.  Must contain the columns listed in
-            REQUIRED_COLUMNS.
-        domain: Custom simulation domain.  If None, the default
-            1200 x 1200 x 1000 um domain is used for every row.
-        chunk_size: Number of rows per chunk.  Larger values reduce
-            multiprocessing overhead at the cost of coarser progress.
+        data: Input DataFrame.  Must contain the columns listed in REQUIRED_COLUMNS.
+        domain: Custom simulation domain.  If None, the default 1200 x 1200 x 1000 um domain is used for every row.
+        chunk_size: Number of rows per chunk.  Larger values reduce multiprocessing overhead at the cost of coarser progress.
             Defaults to 50.
-        workers: Worker processes to use.  ``1`` or ``None`` runs
-            serially; ``-1`` uses all available cores.
-        output_dir: If provided, each processed chunk is saved as a CSV
-            file under this directory before results are concatenated.
+        workers: Worker processes to use.  ``1`` or ``None`` runs serially; ``-1`` uses all available cores.
+        output_dir: If provided, each processed chunk is saved as a CSV file under this directory before results are concatenated.
+        return_field: When ``True``, a ``temperature_field`` column is added to the output DataFrame containing
+            the ``TemperatureField`` for each row (``None`` for rows that failed).
 
     Returns:
         A new DataFrame identical to ``data`` plus the output columns:
         ``melt_length``, ``melt_width``, ``melt_depth`` (m),
         ``melt_length_um``, ``melt_width_um``, ``melt_depth_um`` (um),
-        ``peak_temperature``, ``min_temperature`` (K).
+        ``peak_temperature``, ``min_temperature`` (K), and optionally
+        ``temperature_field`` when ``return_field=True``.
 
     Raises:
         TypeError: If ``data`` is not a pandas DataFrame.
@@ -201,7 +209,7 @@ def compute_melt_pool(
     out_dir = Path(output_dir) if output_dir is not None else None
 
     chunks = [data.iloc[i : i + chunk_size] for i in range(0, len(data), chunk_size)]
-    params = [(idx, chunk, domain, out_dir) for idx, chunk in enumerate(chunks)]
+    params = [(idx, chunk, domain, out_dir, return_field) for idx, chunk in enumerate(chunks)]
 
     if workers is None or workers == 1:
         _logger.info("Running serially (%d chunk(s)).", len(chunks))
