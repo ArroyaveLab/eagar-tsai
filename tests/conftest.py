@@ -38,3 +38,14 @@ def small_domain() -> SimulationDomain:
         z_depth_um=200.0,
         spatial_resolution_um=10.0,
     )
+
+
+@pytest.fixture
+def tiny_domain() -> SimulationDomain:
+    """A minimal domain for near-instant tests of array shapes and properties."""
+    return SimulationDomain(
+        x_length_um=50.0,
+        y_length_um=30.0,
+        z_depth_um=20.0,
+        spatial_resolution_um=10.0,
+    )
