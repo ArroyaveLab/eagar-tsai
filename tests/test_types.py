@@ -4,10 +4,24 @@ from __future__ import annotations
 
 import math
 
+import numpy as np
 import pytest
 
-from eagar_tsai import BeamParameters, MaterialProperties, MeltPoolResult, SimulationDomain
+from eagar_tsai import BeamParameters, MaterialProperties, MeltPoolResult, SimulationDomain, TemperatureField
 from eagar_tsai._types import _T0_K
+
+
+def _minimal_temperature_field() -> TemperatureField:
+    """Return a minimal TemperatureField suitable for constructing MeltPoolResult in unit tests."""
+    dummy = np.zeros((1, 1))
+    return TemperatureField(
+        T_xy=dummy,
+        T_xz=dummy,
+        x_range_m=np.array([0.0]),
+        y_range_m=np.array([0.0]),
+        z_range_m=np.array([0.0]),
+        liquidus_temperature_k=1700.0,
+    )
 
 
 class TestBeamParameters:
@@ -139,6 +153,7 @@ class TestMeltPoolResult:
             depth=150e-6,
             peak_temperature=2000.0,
             min_temperature=300.0,
+            temperature_field=_minimal_temperature_field(),
         )
         assert math.isclose(r.length_um, 500.0)
         assert math.isclose(r.width_um, 300.0)

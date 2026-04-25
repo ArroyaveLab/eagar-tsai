@@ -121,22 +121,22 @@ class TestProcessChunkErrorHandling:
     def test_invalid_row_fills_nan(self) -> None:
         """A row whose BeamParameters validation fails produces all-NaN outputs."""
         # power_w=0 is rejected by BeamParameters.__post_init__ -> ValueError
-        result = _process_chunk((0, _chunk(power_w=0.0), None, None))
+        result = _process_chunk((0, _chunk(power_w=0.0), None, None, False))
 
         for col in _OUTPUT_COLUMNS:
             assert math.isnan(result.iloc[0][col]), f"Expected NaN for '{col}'"
 
     def test_error_row_preserves_input_columns(self) -> None:
         """Input column values survive even when the row errors."""
-        result = _process_chunk((0, _chunk(power_w=0.0), None, None))
+        result = _process_chunk((0, _chunk(power_w=0.0), None, None, False))
 
         assert "velocity_m_s" in result.columns
         assert result.iloc[0]["velocity_m_s"] == pytest.approx(0.5)
 
     def test_chunk_index_does_not_affect_nan_fill(self) -> None:
         """NaN fill is independent of the chunk index."""
-        result_0 = _process_chunk((0, _chunk(power_w=0.0), None, None))
-        result_7 = _process_chunk((7, _chunk(power_w=0.0), None, None))
+        result_0 = _process_chunk((0, _chunk(power_w=0.0), None, None, False))
+        result_7 = _process_chunk((7, _chunk(power_w=0.0), None, None, False))
 
         for col in _OUTPUT_COLUMNS:
             assert math.isnan(result_0.iloc[0][col])
@@ -150,7 +150,7 @@ class TestProcessChunkCsvOutput:
     def test_csv_file_is_created(self) -> None:
         """A CSV named ET_<chunk_idx>.csv is created inside output_dir."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            _process_chunk((3, _chunk(), _SMALL_DOMAIN, Path(tmp_dir)))
+            _process_chunk((3, _chunk(), _SMALL_DOMAIN, Path(tmp_dir), False))
 
             expected = Path(tmp_dir) / "ET_0003.csv"
             assert expected.exists(), f"Expected CSV not found: {expected}"
@@ -158,7 +158,7 @@ class TestProcessChunkCsvOutput:
     def test_csv_content_matches_returned_dataframe(self) -> None:
         """The CSV on disk contains the same columns and values as the return value."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            result = _process_chunk((0, _chunk(), _SMALL_DOMAIN, Path(tmp_dir)))
+            result = _process_chunk((0, _chunk(), _SMALL_DOMAIN, Path(tmp_dir), False))
 
             loaded = pd.read_csv(Path(tmp_dir) / "ET_0000.csv")
 
@@ -172,7 +172,7 @@ class TestProcessChunkCsvOutput:
             nested = Path(tmp_dir) / "nested" / "subdir"
             assert not nested.exists()
 
-            _process_chunk((0, _chunk(), _SMALL_DOMAIN, nested))
+            _process_chunk((0, _chunk(), _SMALL_DOMAIN, nested, False))
 
             assert nested.is_dir()
             assert (nested / "ET_0000.csv").exists()
@@ -181,7 +181,7 @@ class TestProcessChunkCsvOutput:
         """Passing output_dir=None leaves no files on disk."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             # Run from tmp_dir so any stray writes would be visible
-            _process_chunk((0, _chunk(), _SMALL_DOMAIN, None))
+            _process_chunk((0, _chunk(), _SMALL_DOMAIN, None, False))
 
             assert list(Path(tmp_dir).iterdir()) == [], "Unexpected files written"
 
@@ -190,7 +190,7 @@ class TestProcessChunkCsvOutput:
         chunk = pd.DataFrame([_row(), _row(power_w=0.0)])
 
         with tempfile.TemporaryDirectory() as tmp_dir:
-            result = _process_chunk((0, chunk, _SMALL_DOMAIN, Path(tmp_dir)))
+            result = _process_chunk((0, chunk, _SMALL_DOMAIN, Path(tmp_dir), False))
 
         for col in _OUTPUT_COLUMNS:
             assert math.isfinite(result.iloc[0][col]), f"Row 0 '{col}' should be finite"

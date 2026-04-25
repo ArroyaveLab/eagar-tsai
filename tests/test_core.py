@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import math
 
+import numpy as np
 import pytest
 import scipy.integrate
 
-from eagar_tsai import BeamParameters, MaterialProperties, MeltPoolResult, SimulationDomain
+from eagar_tsai import BeamParameters, MaterialProperties, MeltPoolResult, SimulationDomain, TemperatureField
 from eagar_tsai._core import compute_single_point, eagar_tsai_integrand
 
 
@@ -112,6 +113,128 @@ class TestComputeSinglePointNonConvergence:
             compute_single_point(steel_beam, steel_material, small_domain)
 
 
+class TestComputeSinglePointReturnField:
+    """Tests for compute_single_point return type and embedded TemperatureField."""
+
+    def test_returns_melt_pool_result(
+        self,
+        steel_beam: BeamParameters,
+        steel_material: MaterialProperties,
+        tiny_domain: SimulationDomain,
+    ) -> None:
+        """compute_single_point always returns a MeltPoolResult."""
+        result = compute_single_point(steel_beam, steel_material, tiny_domain)
+        assert isinstance(result, MeltPoolResult)
+
+    def test_temperature_field_always_populated(
+        self,
+        steel_beam: BeamParameters,
+        steel_material: MaterialProperties,
+        tiny_domain: SimulationDomain,
+    ) -> None:
+        """MeltPoolResult.temperature_field is always a TemperatureField instance."""
+        result = compute_single_point(steel_beam, steel_material, tiny_domain)
+        assert isinstance(result.temperature_field, TemperatureField)
+
+    def test_temperature_field_dimensions_match_result(
+        self,
+        steel_beam: BeamParameters,
+        steel_material: MaterialProperties,
+        tiny_domain: SimulationDomain,
+    ) -> None:
+        """TemperatureField.melt_width_m and .melt_depth_m match MeltPoolResult.width/.depth."""
+        result = compute_single_point(steel_beam, steel_material, tiny_domain)
+        assert result.temperature_field.melt_width_m == pytest.approx(result.width, rel=1e-12)
+        assert result.temperature_field.melt_depth_m == pytest.approx(result.depth, rel=1e-12)
+
+    def test_t_xy_shape_matches_grids(
+        self,
+        steel_beam: BeamParameters,
+        steel_material: MaterialProperties,
+        tiny_domain: SimulationDomain,
+    ) -> None:
+        """T_xy has shape (ny, nx) consistent with y_range_m and x_range_m."""
+        result = compute_single_point(steel_beam, steel_material, tiny_domain)
+        tf = result.temperature_field
+        assert tf.T_xy.shape == (tf.y_range_m.shape[0], tf.x_range_m.shape[0])
+
+    def test_t_xz_shape_matches_grids(
+        self,
+        steel_beam: BeamParameters,
+        steel_material: MaterialProperties,
+        tiny_domain: SimulationDomain,
+    ) -> None:
+        """T_xz has shape (nz, nx) consistent with z_range_m and x_range_m."""
+        result = compute_single_point(steel_beam, steel_material, tiny_domain)
+        tf = result.temperature_field
+        assert tf.T_xz.shape == (tf.z_range_m.shape[0], tf.x_range_m.shape[0])
+
+    def test_coordinate_grids_are_1d(
+        self,
+        steel_beam: BeamParameters,
+        steel_material: MaterialProperties,
+        tiny_domain: SimulationDomain,
+    ) -> None:
+        """All coordinate arrays are 1-D."""
+        tf = compute_single_point(steel_beam, steel_material, tiny_domain).temperature_field
+        assert tf.x_range_m.ndim == 1
+        assert tf.y_range_m.ndim == 1
+        assert tf.z_range_m.ndim == 1
+
+    def test_um_properties_are_1e6x_metres(
+        self,
+        steel_beam: BeamParameters,
+        steel_material: MaterialProperties,
+        tiny_domain: SimulationDomain,
+    ) -> None:
+        """Micrometre coordinate properties are exactly 1e6 times the metre arrays."""
+        tf = compute_single_point(steel_beam, steel_material, tiny_domain).temperature_field
+        np.testing.assert_allclose(tf.x_range_um, tf.x_range_m * 1e6)
+        np.testing.assert_allclose(tf.y_range_um, tf.y_range_m * 1e6)
+        np.testing.assert_allclose(tf.z_range_um, tf.z_range_m * 1e6)
+
+    def test_z_range_is_non_positive(
+        self,
+        steel_beam: BeamParameters,
+        steel_material: MaterialProperties,
+        tiny_domain: SimulationDomain,
+    ) -> None:
+        """z_range_m contains only non-positive values (surface at z=0, depth below)."""
+        tf = compute_single_point(steel_beam, steel_material, tiny_domain).temperature_field
+        assert float(tf.z_range_m.max()) <= 0.0
+
+    def test_y_range_is_non_negative(
+        self,
+        steel_beam: BeamParameters,
+        steel_material: MaterialProperties,
+        tiny_domain: SimulationDomain,
+    ) -> None:
+        """y_range_m contains only non-negative values (half-domain symmetry)."""
+        tf = compute_single_point(steel_beam, steel_material, tiny_domain).temperature_field
+        assert float(tf.y_range_m.min()) >= 0.0
+
+    def test_liquidus_temperature_stored(
+        self,
+        steel_beam: BeamParameters,
+        steel_material: MaterialProperties,
+        tiny_domain: SimulationDomain,
+    ) -> None:
+        """liquidus_temperature_k matches the material's liquidus temperature."""
+        result = compute_single_point(steel_beam, steel_material, tiny_domain)
+        assert result.temperature_field.liquidus_temperature_k == steel_material.liquidus_temperature
+
+    def test_temperatures_above_ambient(
+        self,
+        steel_beam: BeamParameters,
+        steel_material: MaterialProperties,
+        tiny_domain: SimulationDomain,
+    ) -> None:
+        """All computed temperatures are at or above the 300 K ambient."""
+        tf = compute_single_point(steel_beam, steel_material, tiny_domain).temperature_field
+        assert float(tf.T_xy.min()) >= 300.0
+        assert float(tf.T_xz.min()) >= 300.0
+
+
 @pytest.mark.slow
 class TestComputeSinglePoint:
     """Integration tests for compute_single_point (marked slow)."""
@@ -122,9 +245,10 @@ class TestComputeSinglePoint:
         steel_material: MaterialProperties,
         small_domain: SimulationDomain,
     ) -> None:
-        """Return type is MeltPoolResult."""
+        """Return type is MeltPoolResult with a populated TemperatureField."""
         result = compute_single_point(steel_beam, steel_material, small_domain)
         assert isinstance(result, MeltPoolResult)
+        assert isinstance(result.temperature_field, TemperatureField)
 
     def test_melt_pool_positive_dimensions(
         self,
@@ -160,6 +284,7 @@ class TestComputeSinglePoint:
         assert result.length == 0.0
         assert result.width == 0.0
         assert result.depth == 0.0
+        assert isinstance(result.temperature_field, TemperatureField)
 
     def test_peak_temperature_above_liquidus(
         self,
