@@ -10,7 +10,7 @@
 [![Tests](https://github.com/ArroyaveLab/eagar-tsai/actions/workflows/test.yml/badge.svg)](https://github.com/ArroyaveLab/eagar-tsai/actions/workflows/test.yml)
 [![Lint](https://github.com/ArroyaveLab/eagar-tsai/actions/workflows/lint.yml/badge.svg)](https://github.com/ArroyaveLab/eagar-tsai/actions/workflows/lint.yml)
 
-`eagar-tsai` is a Python library implementing the <strong>Eagar–Tsai moving heat source model</strong> to estimate melt pool dimensions (length, width, depth) for a scanning laser over a semi-infinite solid. Temperature fields are computed via a 1D integral; melt pool dimensions are extracted from the liquidus isotherm.
+`eagar-tsai` is a Python library implementing the Eagar–Tsai moving heat source model to estimate melt pool dimensions (length, width, depth) for a scanning laser over a semi-infinite solid. Temperature fields are computed via a 1D integral; melt pool dimensions are extracted from the liquidus isotherm.
 
 <p>
   <a href="https://github.com/ArroyaveLab/eagar-tsai/issues/new?labels=bug">Report a Bug</a> |
@@ -47,7 +47,37 @@ pip install eagar-tsai
 
 ## Quick Start
 
-`compute_melt_pool` requires a DataFrame with the columns below; `workers`, `chunk_size`, and `output_dir` are optional:
+For a single parameter set, use `compute_single_point` directly:
+
+```python
+from eagar_tsai import BeamParameters, MaterialProperties, SimulationDomain, compute_single_point
+
+beam = BeamParameters(
+        beam_diameter=100e-6,
+        power=200.0,
+        velocity=0.5,
+        absorptivity=0.35
+)
+mat = MaterialProperties(
+        liquidus_temperature=1700.0,
+        thermal_conductivity=30.0,
+        density=7800.0,
+        specific_heat=700.0
+)
+dom = SimulationDomain(
+        x_length_um=1200.0,
+        y_length_um=1200.0,
+        z_depth_um=1000.0,
+        spatial_resolution_um=1.0,
+)
+
+result = compute_single_point(beam, mat, dom)
+print(f"Length: {result.length_um:.1f} µm")
+print(f"Width:  {result.width_um:.1f} µm")
+print(f"Depth:  {result.depth_um:.1f} µm")
+```
+
+To run multiple parameter sets in parallel, use `compute_melt_pool` with a DataFrame. `workers`, `chunk_size`, and `output_dir` are optional:
 
 ```python
 import pandas as pd
@@ -64,19 +94,13 @@ df = pd.DataFrame({
     "specific_heat_j_kgk":       [700.0],
 })
 
-result = compute_melt_pool(df)
-print(result[["melt_length_um", "melt_width_um", "melt_depth_um"]])
-```
-
-Commonly overridden parameters:
-
-```python
 result = compute_melt_pool(
     df,
     workers=4,                # parallel worker processes (default: None, serial)
     chunk_size=50,            # rows per worker chunk (default: 50)
     output_dir="CalcFiles/",  # write per-chunk CSVs (default: None)
 )
+print(result[["melt_length_um", "melt_width_um", "melt_depth_um"]])
 ```
 
 ### Required Input Columns
@@ -104,3 +128,31 @@ result = compute_melt_pool(
 | `melt_depth_um`    | µm   |
 | `peak_temperature` | K    |
 | `min_temperature`  | K    |
+
+## Temperature Field Visualization
+
+`compute_single_point` returns a `MeltPoolResult` that always includes the full `TemperatureField` and a built-in plot method:
+
+```python
+from eagar_tsai import BeamParameters, MaterialProperties, SimulationDomain, compute_single_point
+
+beam = BeamParameters(
+        beam_diameter=100e-6,
+        power=200.0,
+        velocity=0.5,
+        absorptivity=0.35
+)
+mat  = MaterialProperties(
+        liquidus_temperature=1700.0,
+        thermal_conductivity=30.0,
+        density=7800.0,
+        specific_heat=700.0
+)
+
+result = compute_single_point(beam, mat)
+print(result.length_um)                        # melt pool length in µm
+print(result.temperature_field.T_xy.shape)     # (ny, nx) — surface plane in Kelvin
+print(result.temperature_field.T_xz.shape)     # (nz, nx) — depth cross-section in Kelvin
+
+fig = result.plot(output="temperature_field.png") # equivalently: result.temperature_field.plot(output="temperature_field.png")
+```
