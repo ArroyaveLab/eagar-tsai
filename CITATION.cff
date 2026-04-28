@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: eagar-tsai
+version: 0.2.0
+date-released: "2026-04-27"
+license: GPL-3.0-or-later
+repository-code: "https://github.com/ArroyaveLab/eagar-tsai"
+doi: 10.5281/zenodo.19837225
+url: "https://doi.org/10.5281/zenodo.19837225"
+abstract: "Python library implementing the Eagar–Tsai moving heat source model to estimate melt pool dimensions (length, width, depth) for a scanning laser over a semi-infinite solid."
+authors:
+  - family-names: "Sarıtürk"
+    given-names: "Doğuhan"
+    email: dogu.sariturk@gmail.com
+    orcid: "https://orcid.org/0000-0003-0008-1165"
+  - family-names: Vela
+    given-names: Brent
+    email: brentvela@tamu.edu
+    orcid: "https://orcid.org/0000-0001-6465-3738"
