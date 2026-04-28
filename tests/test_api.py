@@ -120,7 +120,6 @@ class TestProcessChunkErrorHandling:
 
     def test_invalid_row_fills_nan(self) -> None:
         """A row whose BeamParameters validation fails produces all-NaN outputs."""
-        # power_w=0 is rejected by BeamParameters.__post_init__ -> ValueError
         result = _process_chunk((0, _chunk(power_w=0.0), None, None, False))
 
         for col in _OUTPUT_COLUMNS:
@@ -180,7 +179,6 @@ class TestProcessChunkCsvOutput:
     def test_no_csv_when_output_dir_is_none(self) -> None:
         """Passing output_dir=None leaves no files on disk."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            # Run from tmp_dir so any stray writes would be visible
             _process_chunk((0, _chunk(), _SMALL_DOMAIN, None, False))
 
             assert list(Path(tmp_dir).iterdir()) == [], "Unexpected files written"
