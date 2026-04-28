@@ -35,7 +35,7 @@ from ._types import (
 )
 from .plot import plot_temperature_field
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __all__ = [
     "BeamParameters",
     "MaterialProperties",
