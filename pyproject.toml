@@ -4,7 +4,7 @@ version = "0.2.0"
 description = "Eagar–Tsai moving heat source model for melt pool dimension estimation"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "GPL-3.0-or-later" }
+license = "GPL-3.0-or-later"
 authors = [
     { name = "Doguhan Sariturk", email = "dogu.sariturk@gmail.com" },
     { name = "Brent Vela", email = "brentvela@tamu.edu"}

@@ -169,4 +169,19 @@ This project is licensed under the GNU GPLv3 License. See the [LICENSE](https://
 
 ## Citation
 
-We are currently preparing a preprint for publication.
+We are currently preparing a preprint for publication. If you use `eagar-tsai` in your research, please cite the following:
+
+> Sarıtürk, D., & Vela, B. (2026). eagar-tsai. Zenodo. https://doi.org/10.5281/zenodo.19837225
+
+BibTeX:
+
+```bibtex
+@software{sariturk_2026_19837225,
+  author    = {Sarıtürk, Doğuhan and Vela, Brent},
+  title     = {eagar-tsai},
+  year      = 2026,
+  publisher = {Zenodo},
+  doi       = {10.5281/zenodo.19837225},
+  url       = {https://doi.org/10.5281/zenodo.19837225},
+}
+```
