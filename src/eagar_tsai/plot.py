@@ -5,8 +5,7 @@ Example:
     from eagar_tsai.plot import plot_temperature_field
 
     beam = BeamParameters(beam_diameter=100e-6, power=200.0, velocity=0.5, absorptivity=0.35)
-    mat = MaterialProperties(liquidus_temperature=1700.0, thermal_conductivity=30.0,
-                              density=7800.0, specific_heat=700.0)
+    mat = MaterialProperties(liquidus_temperature=1700.0, thermal_conductivity=30.0, density=7800.0, specific_heat=700.0)
     fig = plot_temperature_field(beam, mat, output="temperature_field.png")
 """
 

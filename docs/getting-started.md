@@ -23,31 +23,31 @@ The C extension is compiled automatically during installation. You need a C comp
 
 `compute_melt_pool` accepts a `pandas.DataFrame` with the following columns:
 
-| Column | Unit | Description |
-|--------|------|-------------|
-| `velocity_m_s` | m/s | Scan velocity |
-| `power_w` | W | Laser power |
-| `beam_diameter_m` | m | Beam diameter (2σ) |
-| `absorptivity` | — | Absorptivity (0, 1] |
-| `liquidus_temperature_k` | K | Liquidus temperature |
-| `thermal_conductivity_w_mk` | W/(m·K) | Thermal conductivity at liquidus |
-| `density_kg_m3` | kg/m³ | Density |
-| `specific_heat_j_kgk` | J/(kg·K) | Specific heat at liquidus |
+| Column                      | Unit     | Description                      |
+|-----------------------------|----------|----------------------------------|
+| `velocity_m_s`              | m/s      | Scan velocity                    |
+| `power_w`                   | W        | Laser power                      |
+| `beam_diameter_m`           | m        | Beam diameter (2σ)               |
+| `absorptivity`              | —        | Absorptivity (0, 1]              |
+| `liquidus_temperature_k`    | K        | Liquidus temperature             |
+| `thermal_conductivity_w_mk` | W/(m·K)  | Thermal conductivity at liquidus |
+| `density_kg_m3`             | kg/m³    | Density                          |
+| `specific_heat_j_kgk`       | J/(kg·K) | Specific heat at liquidus        |
 
 ## Output Columns
 
 The result DataFrame contains all input columns plus:
 
-| Column | Unit | Description |
-|--------|------|-------------|
-| `melt_length` | m | Melt pool length |
-| `melt_width` | m | Melt pool width (full, 2× half-width) |
-| `melt_depth` | m | Melt pool depth |
-| `melt_length_um` | µm | Melt pool length |
-| `melt_width_um` | µm | Melt pool width |
-| `melt_depth_um` | µm | Melt pool depth |
-| `peak_temperature` | K | Peak temperature in domain |
-| `min_temperature` | K | Minimum temperature in domain |
+| Column             | Unit | Description                           |
+|--------------------|------|---------------------------------------|
+| `melt_length`      | m    | Melt pool length                      |
+| `melt_width`       | m    | Melt pool width (full, 2× half-width) |
+| `melt_depth`       | m    | Melt pool depth                       |
+| `melt_length_um`   | µm   | Melt pool length                      |
+| `melt_width_um`    | µm   | Melt pool width                       |
+| `melt_depth_um`    | µm   | Melt pool depth                       |
+| `peak_temperature` | K    | Peak temperature in domain            |
+| `min_temperature`  | K    | Minimum temperature in domain         |
 
 ## Basic Usage
 
@@ -116,11 +116,24 @@ from eagar_tsai import (
     BeamParameters, MaterialProperties, SimulationDomain, compute_single_point
 )
 
-beam = BeamParameters(beam_diameter=100e-6, power=200.0, velocity=0.5, absorptivity=0.35)
-mat  = MaterialProperties(liquidus_temperature=1700.0, thermal_conductivity=30.0,
-                          density=7800.0, specific_heat=700.0)
-dom  = SimulationDomain(x_length_um=320, y_length_um=110, z_depth_um=60,
-                        spatial_resolution_um=5)
+beam = BeamParameters(
+        beam_diameter=100e-6,
+        power=200.0,
+        velocity=0.5,
+        absorptivity=0.35
+)
+mat  = MaterialProperties(
+        liquidus_temperature=1700.0,
+        thermal_conductivity=30.0,
+        density=7800.0,
+        specific_heat=700.0
+)
+dom  = SimulationDomain(
+        x_length_um=320,
+        y_length_um=110,
+        z_depth_um=60,
+        spatial_resolution_um=5
+)
 
 result = compute_single_point(beam, mat, dom)
 
