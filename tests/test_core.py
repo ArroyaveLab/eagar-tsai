@@ -297,14 +297,13 @@ class TestComputeSinglePoint:
         if result.length > 0.0:
             assert result.peak_temperature > steel_material.liquidus_temperature
 
+    @pytest.mark.slow
     def test_default_domain_used_when_none(
         self,
         steel_beam: BeamParameters,
         steel_material: MaterialProperties,
     ) -> None:
         """Calling without a domain argument does not raise."""
-        # This will use the default 1200x1200x1000 um, 1 um grid — very slow,
-        # but we just check it doesn't error out. Marked slow for this reason.
         result = compute_single_point(steel_beam, steel_material)
         assert isinstance(result, MeltPoolResult)
 
