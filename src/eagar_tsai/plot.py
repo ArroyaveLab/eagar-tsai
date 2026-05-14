@@ -117,7 +117,7 @@ def _render_temperature_panels(
     cax_a = div_a.append_axes("right", size="5%", pad=0.05)
     fig.colorbar(im_a, cax=cax_a).set_label("T (K)")
     ax_a.set_ylabel("Width (µm)")
-    ax_b.set_xlabel("Length (µm)")
+    ax_a.set_xlabel("Length (µm)")
 
     if annotate and field.melt_width_m > 0.0:
         w_um = field.melt_width_m * 1e6
