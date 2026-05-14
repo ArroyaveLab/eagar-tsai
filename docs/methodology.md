@@ -6,7 +6,7 @@ The Eagar–Tsai model (1983) provides an analytical solution for the steady-sta
 
 **References:**
 
-- T. W. Eagar and N.-S. Tsai, "Temperature Fields Produced by Traveling Distributed Heat Sources," *Welding Journal (Research Supplement)*, December 1983, pp. 346-s–354-s.
+- T. W. Eagar and N.-S. Tsai, "Temperature Fields Produced by Traveling Distributed Heat Sources," *Welding Journal (Research Supplement)*, December 1983, pp. 346-s–354-s.
 - C integrand reformulation: Sasha Rubenchik, LLNL, 2015.
 
 ---
@@ -27,50 +27,56 @@ The Eagar–Tsai model (1983) provides an analytical solution for the steady-sta
 
 Material thermal diffusivity is computed from the three input properties:
 
-```
-alpha = k / (rho * cp)
-```
+$$
+\alpha = \frac{k}{\rho\, c_p}
+$$
 
-where `k` is thermal conductivity (W/(m·K)), `rho` is density (kg/m³), and `cp` is specific heat (J/(kg·K)).
+where $k$ is thermal conductivity (W/(m·K)), $\rho$ is density (kg/m³), and $c_p$ is specific heat (J/(kg·K)).
 
 ### Non-dimensional parameter
 
 The model uses a single non-dimensional parameter that captures the ratio of diffusive to advective transport:
 
-```
-p = alpha / (v * sigma)
-```
+$$
+p = \frac{\alpha}{v\,\sigma}
+$$
 
-where `v` is the scan velocity (m/s) and `sigma = sqrt(2) * (d / 2)` is the Gaussian width derived from beam diameter `d`.
+where $v$ is the scan velocity (m/s) and $\sigma$ is the Gaussian beam width derived from beam diameter $d$:
+
+$$
+\sigma = \frac{\sqrt{2}\,d}{2}
+$$
+
+Large $p$ characterizes diffusion-dominated conditions; small $p$ characterizes advection-dominated ones.
 
 ### Temperature prefactor
 
 The overall temperature scale is set by:
 
-```
-Ts = (A * P) / (pi * (k / alpha) * sqrt(pi * alpha * v * sigma^3))
-```
+$$
+T_s = \frac{A\,P}{\pi\,\rho\,c_p\,\sqrt{\pi\,\alpha\,v\,\sigma^3}}
+$$
 
-where `A` is absorptivity and `P` is laser power (W).
+where $A$ is absorptivity (dimensionless) and $P$ is laser power (W). Using $k/\alpha = \rho c_p$, this is equivalent to the form $T_s = A P \alpha / (\pi k \sqrt{\pi \alpha v \sigma^3})$.
 
 ### Temperature field
 
-The temperature at any point `(x, y, z)` in the frame co-moving with the beam is:
+The temperature at any point $(x, y, z)$ in the frame co-moving with the beam is:
 
-```
-T(x, y, z) = T0 + Ts * integral_0^inf  f(t, x, y, z, p)  dt
-```
+$$
+T(x,\,y,\,z) = T_0 + T_s \int_0^\infty f(t;\;x,\,y,\,z,\,p)\,\mathrm{d}t
+$$
 
-where `T0 = 298 K` is the ambient temperature and the integration variable `t` is a dimensionless time-like parameter.
+where $T_0 = 298\,\mathrm{K}$ is the ambient temperature and $t$ is a dimensionless time-like integration variable (not physical time). All spatial coordinates $(x, y, z)$ are non-dimensionality by $\sigma$.
 
 ### Integrand
 
-```
-f(t, x, y, z, p) =  1 / ((4*p*t + 1) * sqrt(t))
-                  * exp(-z^2 / (4*t)  -  (y^2 + (x - t)^2) / (4*p*t + 1))
-```
+$$
+f(t;\;x,\,y,\,z,\,p) = \frac{1}{(4pt+1)\,\sqrt{t}}\exp\!\left(-\frac{z^2}{4t} - \frac{y^2 + (x-t)^2}{4pt+1}\right)
+$$
 
-The integrand is evaluated numerically using `scipy.integrate.quad`. For performance, the integrand is implemented as a C extension (`_integrand_ext.c`) and passed to QUADPACK as a `LowLevelCallable`, eliminating Python overhead on every function evaluation.
+!!! note "Singularity at $t = 0$"
+    The $1/\sqrt{t}$ factor produces an integrable singularity at $t = 0$. SciPy's `quad` (adaptive QUADPACK) handles this automatically without any regularization. For performance, the integrand is implemented as a C extension (`_integrand_ext.c`) and passed to QUADPACK as a `LowLevelCallable`, eliminating Python overhead on every function evaluation.
 
 ---
 
@@ -78,15 +84,15 @@ The integrand is evaluated numerically using `scipy.integrate.quad`. For perform
 
 The temperature field is evaluated on two planes:
 
-- the **x–y plane** (z = 0, top surface) to obtain melt pool length and half-width,
-- the **x–z plane** (y = 0, centerline) to obtain melt pool depth.
+- the **x–y plane** (z = 0, top surface) to get melt pool length and half-width,
+- the **x–z plane** (y = 0, centerline) to get melt pool depth.
 
-The melt pool boundary is the liquidus isotherm `T = T_liquidus`. The three dimensions are extracted as:
+The melt pool boundary is the liquidus isotherm $T = T_\mathrm{liq}$. The three dimensions are extracted as:
 
 | Dimension | Definition |
 |-----------|-----------|
-| Length | Extent of `T >= T_liquidus` along x |
-| Width | 2 × half-extent of `T >= T_liquidus` along y at the surface |
-| Depth | Extent of `T >= T_liquidus` along z at the centerline |
+| Length | Extent of $T \geq T_\mathrm{liq}$ along $x$ |
+| Width | $2 \times$ half-extent of $T \geq T_\mathrm{liq}$ along $y$ at the surface |
+| Depth | Extent of $T \geq T_\mathrm{liq}$ along $z$ at the centerline |
 
 If the melt pool reaches any domain boundary, the domain is automatically expanded and the computation is repeated (up to 20 iterations).
