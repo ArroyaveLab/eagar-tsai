@@ -90,7 +90,7 @@ df = pd.DataFrame({
 })
 
 result = compute_melt_pool(
-    df,
+    data=df,
     workers=4,                # parallel worker processes (default: None, serial)
     chunk_size=50,            # rows per worker chunk (default: 50)
     output_dir="CalcFiles/",  # write per-chunk CSVs (default: None)
@@ -139,6 +139,7 @@ beam = BeamParameters(
         velocity=0.5,
         absorptivity=0.35
 )
+
 mat  = MaterialProperties(
         liquidus_temperature=1700.0,
         thermal_conductivity=30.0,
@@ -146,7 +147,19 @@ mat  = MaterialProperties(
         specific_heat=700.0
 )
 
-result = compute_single_point(beam, mat)
+dom = SimulationDomain(
+        x_length_um=320.0,
+        y_length_um=110.0,
+        z_depth_um=60.0,
+        spatial_resolution_um=5.0,
+)
+
+result = compute_single_point(
+        beam=beam,
+        material=mat,
+        domain=dom
+)
+
 print(result.length_um)                        # melt pool length in µm
 print(result.temperature_field.T_xy.shape)     # (ny, nx) — surface plane in Kelvin
 print(result.temperature_field.T_xz.shape)     # (nz, nx) — depth cross-section in Kelvin
