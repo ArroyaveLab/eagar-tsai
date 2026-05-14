@@ -116,7 +116,8 @@ def _render_temperature_panels(
     div_a = make_axes_locatable(ax_a)
     cax_a = div_a.append_axes("right", size="5%", pad=0.05)
     fig.colorbar(im_a, cax=cax_a).set_label("T (K)")
-    ax_a.set_ylabel("y (µm)")
+    ax_a.set_ylabel("Width (µm)")
+    ax_b.set_xlabel("Length (µm)")
 
     if annotate and field.melt_width_m > 0.0:
         w_um = field.melt_width_m * 1e6
@@ -153,7 +154,7 @@ def _render_temperature_panels(
     fig.colorbar(im_b, cax=cax_b).set_label("T (K)")
     ax_b.invert_yaxis()
     ax_b.axhline(0.0, color="white", linewidth=0.55, alpha=0.8)
-    ax_b.set_xlabel("x (µm)")
+    ax_b.set_xlabel("Length (µm)")
     ax_b.set_ylabel("Depth (µm)")
 
     if annotate and field.melt_depth_m > 0.0:
