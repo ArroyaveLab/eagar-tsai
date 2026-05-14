@@ -54,9 +54,10 @@ def eagar_tsai_integrand(t: float, x: float, y: float, z: float, p: float) -> fl
 
     Args:
         t: Integration variable (dimensionless time), must be > 0.
-        x: Non-dimensional x-coordinate (scan direction).
+        x: Non-dimensional x-coordinate, positive in the trailing wake direction
+            (opposite to the scan direction).
         y: Non-dimensional y-coordinate (cross-scan direction).
-        z: Non-dimensional z-coordinate (depth, via sqrt(alpha * sigma / v)).
+        z: Non-dimensional z-coordinate (depth, scaled by sqrt(alpha * sigma / v)).
         p: Non-dimensional parameter alpha / (v * sigma).
 
     Returns:
@@ -111,12 +112,13 @@ def _build_grids(
 
     Returns:
         Tuple (xrange, yrange, zrange) of 1-D ndarrays in metres.
-        xrange starts slightly behind the beam center to capture the
-        trailing melt pool; yrange runs from 0 to domain.y_length
+        xrange starts slightly ahead of the beam center in the scan direction
+        (x < 0); the trailing melt pool extends into positive x.
+        yrange runs from 0 to domain.y_length
         (half-domain, by symmetry); zrange runs from -domain.z_depth to 0.
     """
     delta = domain.spatial_resolution
-    x_min = round(-1.5 * beam.beam_diameter, 9)  # slightly behind beam
+    x_min = round(-1.5 * beam.beam_diameter, 9)  # small margin ahead of beam in scan direction
     x_max = domain.x_length
     y_min = 0.0
     y_max = domain.y_length

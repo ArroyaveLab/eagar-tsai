@@ -97,7 +97,7 @@ def _render_temperature_panels(
     z_depth_um = -z_um[::-1]
     t_xz_display = np.flipud(t_xz)
 
-    temp_norm = Normalize(vmin=300.0, vmax=max(float(t_xy.max()), float(t_xz.max())))
+    temp_norm = Normalize(vmin=298.0, vmax=max(float(t_xy.max()), float(t_xz.max())))
     cmap = plt.get_cmap("cividis")
 
     fig, (ax_a, ax_b) = plt.subplots(2, 1, sharex=True, figsize=(4.5, 4.0))

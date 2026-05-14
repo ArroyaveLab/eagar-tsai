@@ -164,5 +164,5 @@ class TestConstants:
     """Tests for module-level constants."""
 
     def test_ambient_temperature(self) -> None:
-        """Ambient temperature constant is 300 K."""
-        assert _T0_K == 300.0
+        """Ambient temperature constant is 298 K."""
+        assert _T0_K == 298.0

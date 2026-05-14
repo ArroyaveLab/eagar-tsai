@@ -18,7 +18,7 @@ __all__ = [
     "TemperatureField",
 ]
 
-_T0_K: float = 300.0
+_T0_K: float = 298.0
 """Ambient temperature in Kelvin (hard-coded per the original model)."""
 
 _UM_TO_M: float = 1.0e-6
@@ -30,11 +30,14 @@ class BeamParameters:
     """Laser beam and process parameters.
 
     Attributes:
-        beam_diameter: Beam diameter (2*sigma) in metres.
+        beam_diameter: Beam diameter in metres, equal to 2*sigma where σ is the
+            Gaussian standard deviation of the source distribution.
         power: Laser power in Watts.
         velocity: Scan velocity in m/s.
         absorptivity: Absorptivity (dimensionless, must be in (0, 1]).
-        sigma: Derived Gaussian width parameter sqrt(2) * (beam_diameter / 2).
+        sigma: Beam width parameter used in the dimensionless formulation:
+            sqrt(2) * (beam_diameter / 2) = sqrt(2) * sigma. Differs from the
+            Gaussian standard deviation sigma = beam_diameter / 2 by sqrt(2).
     """
 
     beam_diameter: float

@@ -229,10 +229,10 @@ class TestComputeSinglePointReturnField:
         steel_material: MaterialProperties,
         tiny_domain: SimulationDomain,
     ) -> None:
-        """All computed temperatures are at or above the 300 K ambient."""
+        """All computed temperatures are at or above the 298 K ambient."""
         tf = compute_single_point(steel_beam, steel_material, tiny_domain).temperature_field
-        assert float(tf.T_xy.min()) >= 300.0
-        assert float(tf.T_xz.min()) >= 300.0
+        assert float(tf.T_xy.min()) >= 298.0
+        assert float(tf.T_xz.min()) >= 298.0
 
 
 @pytest.mark.slow
@@ -261,7 +261,7 @@ class TestComputeSinglePoint:
         assert result.length >= 0.0
         assert result.width >= 0.0
         assert result.depth >= 0.0
-        assert result.peak_temperature > 300.0
+        assert result.peak_temperature > 298.0
 
     def test_no_melt_pool_below_liquidus(
         self,

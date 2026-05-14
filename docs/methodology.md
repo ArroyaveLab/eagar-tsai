@@ -61,7 +61,7 @@ The temperature at any point `(x, y, z)` in the frame co-moving with the beam is
 T(x, y, z) = T0 + Ts * integral_0^inf  f(t, x, y, z, p)  dt
 ```
 
-where `T0 = 300 K` is the ambient temperature and the integration variable `t` is a dimensionless time-like parameter.
+where `T0 = 298 K` is the ambient temperature and the integration variable `t` is a dimensionless time-like parameter.
 
 ### Integrand
 
