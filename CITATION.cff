@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 title: eagar-tsai
-version: 0.2.0
+version: 0.2.1
 date-released: "2026-04-27"
 license: GPL-3.0-or-later
 repository-code: "https://github.com/ArroyaveLab/eagar-tsai"
