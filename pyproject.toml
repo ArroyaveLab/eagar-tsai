@@ -40,7 +40,7 @@ where = ["src"]
 eagar_tsai = ["py.typed", "*.pyi"]
 
 [tool.ruff]
-src = ["src", "tests"]
+include = ["pyproject.toml", "src/**/*.py", "tests/**/*.py"]
 line-length = 130
 target-version = "py311"
 
@@ -67,7 +67,9 @@ select = [
 ]
 ignore = [
     "PLC0415", # Import outside top level
+    "PLR0912", # Too many branches
     "PLR0913", # Too many arguments in function definition
+    "PLR0915", # Too many statements
     "PLR2004", # magic value assigned to variable in function
     "N806", # variable in function should be lowercase
 ]
@@ -83,6 +85,12 @@ markers = [
 
 [tool.ty.environment]
 python-version = "3.11"
+
+[tool.ty.src]
+include = [
+    "src",
+    "tests",
+]
 
 [tool.cibuildwheel]
 build = "cp311-* cp312-* cp313-*"
