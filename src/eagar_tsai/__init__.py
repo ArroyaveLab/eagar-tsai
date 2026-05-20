@@ -34,7 +34,7 @@ from ._types import (
     SimulationDomain,
     TemperatureField,
 )
-from .plot import plot_temperature_field
+from .plot import plot_printability_map, plot_temperature_field
 
 __version__ = "0.2.2"
 __all__ = [
@@ -47,5 +47,6 @@ __all__ = [
     "compute_melt_pool",
     "compute_printability_map",
     "compute_single_point",
+    "plot_printability_map",
     "plot_temperature_field",
 ]
