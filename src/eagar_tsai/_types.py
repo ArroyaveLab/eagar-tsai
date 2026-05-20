@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 __all__ = [
     "BeamParameters",
     "MaterialProperties",
+    "PrintabilityParameters",
     "SimulationDomain",
     "MeltPoolResult",
     "TemperatureField",
@@ -90,6 +91,47 @@ class MaterialProperties:
     def thermal_diffusivity(self) -> float:
         """Thermal diffusivity alpha = k / (rho * cp) in m^2/s."""
         return self.thermal_conductivity / (self.density * self.specific_heat)
+
+
+@dataclass(frozen=True)
+class PrintabilityParameters:
+    """Fixed process parameters for printability map computation.
+
+    Holds the parameters that remain constant while laser power and scan speed
+    vary across the printability map grid.
+
+    Attributes:
+        beam_diameter_m: Laser beam diameter in metres (= 2σ).
+        absorptivity: Laser absorptivity (dimensionless, must be in (0, 1]).
+        layer_thickness_m: Powder layer thickness in metres.
+        hatch_spacing_m: Hatch spacing between adjacent scan tracks in metres.
+    """
+
+    beam_diameter_m: float
+    absorptivity: float
+    layer_thickness_m: float
+    hatch_spacing_m: float
+
+    def __post_init__(self) -> None:
+        """Validate physical constraints."""
+        if self.beam_diameter_m <= 0.0:
+            raise ValueError(f"beam_diameter_m must be positive, got {self.beam_diameter_m}")
+        if not (0.0 < self.absorptivity <= 1.0):
+            raise ValueError(f"absorptivity must be in (0, 1], got {self.absorptivity}")
+        if self.layer_thickness_m <= 0.0:
+            raise ValueError(f"layer_thickness_m must be positive, got {self.layer_thickness_m}")
+        if self.hatch_spacing_m <= 0.0:
+            raise ValueError(f"hatch_spacing_m must be positive, got {self.hatch_spacing_m}")
+
+    @property
+    def layer_thickness_um(self) -> float:
+        """Powder layer thickness in micrometres."""
+        return self.layer_thickness_m / _UM_TO_M
+
+    @property
+    def hatch_spacing_um(self) -> float:
+        """Hatch spacing in micrometres."""
+        return self.hatch_spacing_m / _UM_TO_M
 
 
 @dataclass(frozen=True)
