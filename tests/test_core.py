@@ -313,7 +313,7 @@ class TestComputeSinglePoint:
         steel_material: MaterialProperties,
         small_domain: SimulationDomain,
     ) -> None:
-        """Micrometre properties are exactly metres x 1e6."""
+        """Micrometre properties are exactly metres * 1e6."""
         result = compute_single_point(steel_beam, steel_material, small_domain)
         assert abs(result.length_um - result.length * 1e6) < 1e-12
         assert abs(result.width_um - result.width * 1e6) < 1e-12

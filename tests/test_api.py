@@ -9,8 +9,8 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from eagar_tsai import SimulationDomain, compute_melt_pool
-from eagar_tsai._api import REQUIRED_COLUMNS, _process_chunk
+from eagar_tsai import SimulationDomain, compute_melt_pool, compute_printability_map
+from eagar_tsai._api import _REQUIRED_COLUMNS, _classify_defect, _process_chunk
 
 _OUTPUT_COLUMNS = [
     "melt_length",
@@ -22,8 +22,6 @@ _OUTPUT_COLUMNS = [
     "peak_temperature",
     "min_temperature",
 ]
-
-_SMALL_DOMAIN = SimulationDomain(x_length_um=300.0, y_length_um=300.0, z_depth_um=200.0, spatial_resolution_um=10.0)
 
 
 def _row(**overrides: object) -> dict[str, object]:
@@ -53,7 +51,7 @@ def _minimal_df(**overrides: object) -> pd.DataFrame:
 
 
 class TestComputeMeltPoolValidation:
-    """Input validation tests (fast — no computation)."""
+    """Input validation tests (fast - no computation)."""
 
     def test_raises_on_non_dataframe(self) -> None:
         """TypeError if input is not a DataFrame."""
@@ -68,10 +66,10 @@ class TestComputeMeltPoolValidation:
             compute_melt_pool(df)
 
     def test_required_columns_list(self) -> None:
-        """REQUIRED_COLUMNS contains expected entries."""
-        assert "velocity_m_s" in REQUIRED_COLUMNS
-        assert "power_w" in REQUIRED_COLUMNS
-        assert "absorptivity" in REQUIRED_COLUMNS
+        """_REQUIRED_COLUMNS contains expected entries."""
+        assert "velocity_m_s" in _REQUIRED_COLUMNS
+        assert "power_w" in _REQUIRED_COLUMNS
+        assert "absorptivity" in _REQUIRED_COLUMNS
 
 
 @pytest.mark.slow
@@ -93,7 +91,7 @@ class TestComputeMeltPoolOutput:
         df = _minimal_df()
         result = compute_melt_pool(df, domain=domain, workers=1)
 
-        for col in REQUIRED_COLUMNS:
+        for col in _REQUIRED_COLUMNS:
             assert col in result.columns
 
     def test_output_row_count_matches_input(self) -> None:
@@ -146,18 +144,18 @@ class TestProcessChunkErrorHandling:
 class TestProcessChunkCsvOutput:
     """output_dir triggers CSV writing to disk."""
 
-    def test_csv_file_is_created(self) -> None:
+    def test_csv_file_is_created(self, small_domain) -> None:
         """A CSV named ET_<chunk_idx>.csv is created inside output_dir."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            _process_chunk((3, _chunk(), _SMALL_DOMAIN, Path(tmp_dir), False))
+            _process_chunk((3, _chunk(), small_domain, Path(tmp_dir), False))
 
             expected = Path(tmp_dir) / "ET_0003.csv"
             assert expected.exists(), f"Expected CSV not found: {expected}"
 
-    def test_csv_content_matches_returned_dataframe(self) -> None:
+    def test_csv_content_matches_returned_dataframe(self, small_domain) -> None:
         """The CSV on disk contains the same columns and values as the return value."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            result = _process_chunk((0, _chunk(), _SMALL_DOMAIN, Path(tmp_dir), False))
+            result = _process_chunk((0, _chunk(), small_domain, Path(tmp_dir), False))
 
             loaded = pd.read_csv(Path(tmp_dir) / "ET_0000.csv")
 
@@ -165,31 +163,124 @@ class TestProcessChunkCsvOutput:
             for col in _OUTPUT_COLUMNS:
                 assert math.isclose(loaded.iloc[0][col], result.iloc[0][col], rel_tol=1e-9), f"Mismatch in column '{col}'"
 
-    def test_output_dir_created_if_missing(self) -> None:
+    def test_output_dir_created_if_missing(self, small_domain) -> None:
         """mkdir(parents=True) means a nested path that does not yet exist is created."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             nested = Path(tmp_dir) / "nested" / "subdir"
             assert not nested.exists()
 
-            _process_chunk((0, _chunk(), _SMALL_DOMAIN, nested, False))
+            _process_chunk((0, _chunk(), small_domain, nested, False))
 
             assert nested.is_dir()
             assert (nested / "ET_0000.csv").exists()
 
-    def test_no_csv_when_output_dir_is_none(self) -> None:
+    def test_no_csv_when_output_dir_is_none(self, small_domain) -> None:
         """Passing output_dir=None leaves no files on disk."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            _process_chunk((0, _chunk(), _SMALL_DOMAIN, None, False))
+            _process_chunk((0, _chunk(), small_domain, None, False))
 
             assert list(Path(tmp_dir).iterdir()) == [], "Unexpected files written"
 
-    def test_mixed_chunk_only_valid_row_is_finite(self) -> None:
+    def test_mixed_chunk_only_valid_row_is_finite(self, small_domain) -> None:
         """In a chunk with one valid and one invalid row, only the invalid row gets NaN."""
         chunk = pd.DataFrame([_row(), _row(power_w=0.0)])
 
         with tempfile.TemporaryDirectory() as tmp_dir:
-            result = _process_chunk((0, chunk, _SMALL_DOMAIN, Path(tmp_dir), False))
+            result = _process_chunk((0, chunk, small_domain, Path(tmp_dir), False))
 
         for col in _OUTPUT_COLUMNS:
             assert math.isfinite(result.iloc[0][col]), f"Row 0 '{col}' should be finite"
             assert math.isnan(result.iloc[1][col]), f"Row 1 '{col}' should be NaN"
+
+
+class TestClassifyDefect:
+    """Unit tests for _classify_defect (no E-T computation - pure math)."""
+
+    def test_no_melting_is_lof(self) -> None:
+        """Zero depth or width returns lack of fusion."""
+        defect, lof1, lof2, *_ = _classify_defect(0.0, 0.0, 0.0, 40.0, 90.0)
+        assert defect == "lack_of_fusion"
+        assert lof1 and lof2
+
+    def test_lof1_shallow_depth(self) -> None:
+        """Depth <= layer thickness triggers LOF1."""
+        defect, lof1, lof2, ball1, ball2, kh1 = _classify_defect(200.0, 150.0, 20.0, 40.0, 90.0)
+        assert lof1
+        assert defect == "lack_of_fusion"
+
+    def test_kh1_narrow_deep_pool(self) -> None:
+        """Width/depth <= 2.5 triggers keyhole, taking priority over LOF."""
+        defect, lof1, lof2, ball1, ball2, kh1 = _classify_defect(200.0, 50.0, 50.0, 40.0, 90.0)
+        assert kh1
+        assert defect == "keyhole"
+
+    def test_ball1_elongated_pool(self) -> None:
+        """Length/width >= 2.3 triggers balling when no other criterion fires."""
+        defect, lof1, lof2, ball1, ball2, kh1 = _classify_defect(1500.0, 300.0, 100.0, 40.0, 90.0)
+        assert ball1
+        assert not kh1
+        assert defect == "balling"
+
+    def test_good_window(self) -> None:
+        """A well-proportioned melt pool with no criterion firing returns good."""
+        defect, lof1, lof2, ball1, ball2, kh1 = _classify_defect(200.0, 250.0, 80.0, 40.0, 90.0)
+        assert not kh1 and not lof1 and not lof2 and not ball1 and not ball2
+        assert defect == "good"
+
+
+@pytest.mark.slow
+class TestComputePrintabilityMap:
+    """Integration tests for compute_printability_map."""
+
+    def test_output_columns_present(self, steel_material, printability_domain, printability_params) -> None:
+        """Result DataFrame contains all expected columns."""
+        df = compute_printability_map(
+            printability_params,
+            steel_material,
+            power_range=(100.0, 300.0),
+            velocity_range=(0.5, 1.5),
+            n_power=3,
+            n_velocity=3,
+            domain=printability_domain,
+        )
+        expected_cols = (
+            "power_w",
+            "velocity_m_s",
+            "melt_length_um",
+            "melt_width_um",
+            "melt_depth_um",
+            "defect",
+            "lof1",
+            "lof2",
+            "ball1",
+            "ball2",
+            "kh1",
+        )
+        for col in expected_cols:
+            assert col in df.columns, f"Missing column: {col}"
+
+    def test_row_count_matches_grid(self, steel_material, printability_domain, printability_params) -> None:
+        """Number of rows equals n_power * n_velocity."""
+        df = compute_printability_map(
+            printability_params,
+            steel_material,
+            power_range=(100.0, 300.0),
+            velocity_range=(0.5, 1.5),
+            n_power=3,
+            n_velocity=4,
+            domain=printability_domain,
+        )
+        assert len(df) == 12
+
+    def test_defect_values_are_valid(self, steel_material, printability_domain, printability_params) -> None:
+        """All defect labels are from the expected set."""
+        df = compute_printability_map(
+            printability_params,
+            steel_material,
+            power_range=(100.0, 300.0),
+            velocity_range=(0.5, 1.5),
+            n_power=3,
+            n_velocity=3,
+            domain=printability_domain,
+        )
+        assert set(df["defect"].unique()).issubset({"good", "keyhole", "lack_of_fusion", "balling"})
