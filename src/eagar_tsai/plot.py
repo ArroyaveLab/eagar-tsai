@@ -15,7 +15,8 @@ from typing import TYPE_CHECKING
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import Normalize
+from matplotlib.colors import ListedColormap, Normalize
+from matplotlib.patches import Patch
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 if TYPE_CHECKING:
@@ -23,9 +24,18 @@ if TYPE_CHECKING:
 
     import matplotlib.figure
 
-    from ._types import BeamParameters, MaterialProperties, SimulationDomain, TemperatureField
+    from ._types import BeamParameters, MaterialProperties, PrintabilityParameters, SimulationDomain, TemperatureField
 
-__all__ = ["plot_temperature_field"]
+__all__ = ["plot_printability_map", "plot_temperature_field"]
+
+_DEFECT_ORDER: list[str] = ["keyhole", "lack_of_fusion", "balling", "good"]
+_DEFECT_COLORS: list[str] = ["#4878cf", "#d65f5f", "#6acc65", "#f0f0f0"]
+_DEFECT_DISPLAY: dict[str, str] = {
+    "keyhole": "Keyhole",
+    "lack_of_fusion": "Lack of Fusion",
+    "balling": "Balling",
+    "good": "Good",
+}
 
 
 def plot_temperature_field(
@@ -175,6 +185,97 @@ def _render_temperature_panels(
             ha="left",
             bbox={"boxstyle": "round,pad=0.15", "fc": (0, 0, 0, 0.28), "ec": "none"},
         )
+
+    fig.tight_layout()
+
+    if output is not None:
+        fig.savefig(output, bbox_inches="tight")
+
+    return fig
+
+
+def plot_printability_map(
+    params: PrintabilityParameters,
+    material: MaterialProperties,
+    *,
+    power_range: tuple[float, float] = (40.0, 400.0),
+    velocity_range: tuple[float, float] = (0.05, 3.0),
+    n_power: int = 50,
+    n_velocity: int = 50,
+    keyhole_wdr_threshold: float = 2.5,
+    domain: SimulationDomain | None = None,
+    workers: int | None = None,
+    output: str | Path | None = None,
+) -> matplotlib.figure.Figure:
+    """Compute and render a printability map over a laser power * scan speed grid.
+
+    Calls ``compute_printability_map`` internally and renders the resulting
+    defect classification as a colour-coded map with laser power on the Y-axis
+    and scan speed on the X-axis.
+
+    Args:
+        params: Fixed process parameters (beam diameter, absorptivity, layer
+            thickness, hatch spacing).
+        material: Material thermal properties.
+        power_range: ``(min_power_W, max_power_W)`` for the grid. Defaults to ``(40.0, 400.0)``.
+        velocity_range: ``(min_velocity_m_s, max_velocity_m_s)`` for the grid. Defaults to ``(0.05, 3.0)``.
+        n_power: Number of laser power grid points. Defaults to ``50``.
+        n_velocity: Number of scan speed grid points. Defaults to ``50``.
+        keyhole_wdr_threshold: Width-to-depth ratio threshold for the KH1 keyhole
+            criterion. Defaults to ``2.5``.
+        domain: Simulation domain. For large grids a coarser domain
+            (e.g. ``SimulationDomain(1200, 1200, 1000, 5)``) reduces compute time.
+        workers: Worker processes for parallel computation. ``None`` or ``1``
+            runs serially; ``-1`` uses all available cores.
+        output: File path to save the figure. When ``None`` the figure is returned
+            without saving.
+
+    Returns:
+        A ``matplotlib.figure.Figure`` with a single axes showing the printability
+        map coloured by defect regime.
+    """
+    from ._api import compute_printability_map
+
+    df = compute_printability_map(
+        params,
+        material,
+        power_range=power_range,
+        velocity_range=velocity_range,
+        n_power=n_power,
+        n_velocity=n_velocity,
+        keyhole_wdr_threshold=keyhole_wdr_threshold,
+        domain=domain,
+        workers=workers,
+    )
+
+    code_map = {label: i for i, label in enumerate(_DEFECT_ORDER)}
+    codes = np.array([code_map[d] for d in df["defect"]], dtype=float).reshape(n_velocity, n_power)
+
+    velocities = np.linspace(velocity_range[0], velocity_range[1], n_velocity)
+    powers = np.linspace(power_range[0], power_range[1], n_power)
+
+    cmap = ListedColormap(_DEFECT_COLORS)
+
+    fig, ax = plt.subplots(figsize=(5.5, 4.0))
+    ax.pcolormesh(
+        velocities,
+        powers,
+        codes.T,
+        cmap=cmap,
+        vmin=-0.5,
+        vmax=3.5,
+        shading="nearest",
+    )
+
+    legend_handles = [
+        Patch(facecolor=_DEFECT_COLORS[i], edgecolor="0.4", linewidth=0.6, label=_DEFECT_DISPLAY[label])
+        for i, label in enumerate(_DEFECT_ORDER)
+        if label in set(df["defect"])
+    ]
+    ax.legend(handles=legend_handles, loc="upper right", framealpha=0.9, fontsize=8)
+
+    ax.set_xlabel("Scan Speed (m/s)")
+    ax.set_ylabel("Laser Power (W)")
 
     fig.tight_layout()
 
