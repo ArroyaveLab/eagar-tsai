@@ -42,7 +42,6 @@ _logger = logging.getLogger(__name__)
 _MAX_EXPANSION_ITERS: int = 20
 """Maximum number of domain-expansion iterations before giving up."""
 
-_DEFAULT_DOMAIN = SimulationDomain()
 """Default simulation domain (1200 x 1200 x 1000 um, 1 um resolution)."""
 
 
@@ -141,7 +140,7 @@ def _compute_temperature_planes(
     material: MaterialProperties,
     domain: SimulationDomain,
     integrand: Callable[..., float] | object,
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Compute the x-y (z=0) and x-z (y=0) temperature planes.
 
     Args:
@@ -152,8 +151,9 @@ def _compute_temperature_planes(
             LowLevelCallable (C extension) or the Python fallback.
 
     Returns:
-        Tuple (T_xy, T_xz) of 2-D ndarrays (temperature in Kelvin).
+        Tuple (T_xy, T_xz, xrange, yrange, zrange).
         T_xy has shape (ny, nx); T_xz has shape (nz, nx).
+        Coordinate arrays are in metres.
     """
     alpha = material.thermal_diffusivity
     sigma = beam.sigma
@@ -180,13 +180,15 @@ def _compute_temperature_planes(
             val, _ = quad(integrand, 0.0, np.inf, args=(x_nd, 0.0, zrange[iz] / z_scale, thermal_ratio))
             T_xz[iz, ix] = _T0_K + temp_scale * val
 
-    return T_xy, T_xz
+    return T_xy, T_xz, xrange, yrange, zrange
 
 
 def compute_single_point(
     beam: BeamParameters,
     material: MaterialProperties,
     domain: SimulationDomain | None = None,
+    *,
+    full_field: bool = True,
 ) -> MeltPoolResult:
     """Compute melt pool dimensions for a single set of process parameters.
 
@@ -200,6 +202,13 @@ def compute_single_point(
         beam: Laser beam and process parameters.
         material: Material thermal properties.
         domain: Spatial domain; defaults to 1200 x 1200 x 1000 um, 1 um.
+        full_field: When ``True`` (default), T_xy and T_xz are computed for
+            every grid point and stored in the returned ``TemperatureField``.
+            When ``False``, T_xz is computed only at the x-indices that fall
+            inside the melt pool, which is significantly faster when the melt
+            pool spans a small fraction of the domain. The TemperatureField
+            is still returned but T_xz is filled with the ambient temperature
+            outside the melt x-range, so it should not be used for plotting.
 
     Returns:
         A ``MeltPoolResult`` containing melt pool dimensions, temperature
@@ -210,18 +219,39 @@ def compute_single_point(
         RuntimeError: If domain expansion does not converge within _MAX_EXPANSION_ITERS iterations.
     """
     if domain is None:
-        domain = _DEFAULT_DOMAIN
+        domain = SimulationDomain()
 
     sigma_um = beam.sigma * 1.0e6  # metres -> um for domain expansion steps
 
+    # Thermal scaling factors depend only on beam/material, not on the domain,
+    # so they are computed once outside the expansion loop.
+    alpha = material.thermal_diffusivity
+    sigma = beam.sigma
+    velocity = beam.velocity
+    thermal_ratio = alpha / (velocity * sigma)
+    temp_scale = (beam.absorptivity * beam.power) / (
+        np.pi * (material.thermal_conductivity / alpha) * np.sqrt(np.pi * alpha * velocity * (sigma**3))
+    )
+    z_scale = np.sqrt((alpha * sigma) / velocity)
+
     for iteration in range(_MAX_EXPANSION_ITERS):
-        T_xy, T_xz = _compute_temperature_planes(beam, material, domain, _INTEGRAND)
-        xrange, yrange, zrange = _build_grids(beam, domain)
+        if full_field:
+            T_xy, T_xz, xrange, yrange, zrange = _compute_temperature_planes(beam, material, domain, _INTEGRAND)
+        else:
+            xrange, yrange, zrange = _build_grids(beam, domain)
+            T_xy = np.empty((yrange.size, xrange.size), dtype=np.float64)
+            for ix in range(xrange.size):
+                x_nd = xrange[ix] / sigma
+                for iy in range(yrange.size):
+                    val, _ = quad(_INTEGRAND, 0.0, np.inf, args=(x_nd, yrange[iy] / sigma, 0.0, thermal_ratio))
+                    T_xy[iy, ix] = _T0_K + temp_scale * val
 
         peak_T = float(np.amax(T_xy))
         min_T = float(np.amin(T_xy))
 
         if peak_T <= material.liquidus_temperature:
+            if not full_field:
+                T_xz = np.full((zrange.size, xrange.size), _T0_K, dtype=np.float64)
             tf = TemperatureField(
                 T_xy=T_xy,
                 T_xz=T_xz,
@@ -247,6 +277,8 @@ def compute_single_point(
         if not np.any(melt_x_mask):
             # Peak is above liquidus but the centerline row doesn't cross it
             # shouldn't happen for a Gaussian source; treat as no melt pool.
+            if not full_field:
+                T_xz = np.full((zrange.size, xrange.size), _T0_K, dtype=np.float64)
             tf = TemperatureField(
                 T_xy=T_xy,
                 T_xz=T_xz,
@@ -269,58 +301,117 @@ def compute_single_point(
         melt_x_indices = np.where(melt_x_mask)[0]
         melt_length = float(np.amax(xrange[melt_x_indices]) - np.amin(xrange[melt_x_indices]))
 
-        y_half_length = 0.0
-        z_length = 0.0
-        for ix in melt_x_indices:
-            melt_y_mask = T_xy[:, ix] > t_melt
-            if np.any(melt_y_mask):
-                melt_y_vals = yrange[melt_y_mask]
-                tmp_y = float(np.amax(melt_y_vals) - np.amin(melt_y_vals))
-                y_half_length = max(y_half_length, tmp_y)
-
-            melt_z_mask = T_xz[:, ix] > t_melt
-            if np.any(melt_z_mask):
-                melt_z_vals = zrange[melt_z_mask]
-                tmp_z = float(np.amax(melt_z_vals) - np.amin(melt_z_vals))
-                z_length = max(z_length, tmp_z)
-
         x_max = domain.x_length
         y_max = domain.y_length
-        z_span = domain.z_depth  # positive
+        z_span = domain.z_depth
 
-        needs_expansion_x = np.isclose(float(np.amax(xrange[melt_x_indices])), x_max)
-        needs_expansion_y = np.isclose(y_half_length, y_max)
-        needs_expansion_z = np.isclose(z_length, z_span)
+        if full_field:
+            y_half_length = 0.0
+            z_length = 0.0
+            for ix in melt_x_indices:
+                melt_y_mask = T_xy[:, ix] > t_melt
+                if np.any(melt_y_mask):
+                    melt_y_vals = yrange[melt_y_mask]
+                    tmp_y = float(np.amax(melt_y_vals) - np.amin(melt_y_vals))
+                    y_half_length = max(y_half_length, tmp_y)
 
-        if needs_expansion_x:
-            _logger.info(
-                "Iteration %d: x domain too small (%.1f um), expanding by %.1f um.",
-                iteration,
-                domain.x_length_um,
-                sigma_um,
-            )
-            domain = domain.expanded(dx_um=sigma_um)
-            continue
+                melt_z_mask = T_xz[:, ix] > t_melt
+                if np.any(melt_z_mask):
+                    melt_z_vals = zrange[melt_z_mask]
+                    tmp_z = float(np.amax(melt_z_vals) - np.amin(melt_z_vals))
+                    z_length = max(z_length, tmp_z)
 
-        if needs_expansion_y:
-            _logger.info(
-                "Iteration %d: y domain too small (%.1f um), expanding by %.1f um.",
-                iteration,
-                domain.y_length_um,
-                sigma_um,
-            )
-            domain = domain.expanded(dy_um=sigma_um)
-            continue
+            needs_expansion_x = np.isclose(float(np.amax(xrange[melt_x_indices])), x_max)
+            needs_expansion_y = np.isclose(y_half_length, y_max)
+            needs_expansion_z = np.isclose(z_length, z_span)
 
-        if needs_expansion_z:
-            _logger.info(
-                "Iteration %d: z domain too small (%.1f um), expanding by %.1f um.",
-                iteration,
-                domain.z_depth_um,
-                sigma_um,
-            )
-            domain = domain.expanded(dz_um=sigma_um)
-            continue
+            if needs_expansion_x:
+                _logger.info(
+                    "Iteration %d: x domain too small (%.1f um), expanding by %.1f um.",
+                    iteration,
+                    domain.x_length_um,
+                    sigma_um,
+                )
+                domain = domain.expanded(dx_um=sigma_um)
+                continue
+
+            if needs_expansion_y:
+                _logger.info(
+                    "Iteration %d: y domain too small (%.1f um), expanding by %.1f um.",
+                    iteration,
+                    domain.y_length_um,
+                    sigma_um,
+                )
+                domain = domain.expanded(dy_um=sigma_um)
+                continue
+
+            if needs_expansion_z:
+                _logger.info(
+                    "Iteration %d: z domain too small (%.1f um), expanding by %.1f um.",
+                    iteration,
+                    domain.z_depth_um,
+                    sigma_um,
+                )
+                domain = domain.expanded(dz_um=sigma_um)
+                continue
+
+        else:
+            # Fast path: check x expansion before paying the cost of T_xz.
+            needs_expansion_x = np.isclose(float(np.amax(xrange[melt_x_indices])), x_max)
+            if needs_expansion_x:
+                _logger.info(
+                    "Iteration %d: x domain too small (%.1f um), expanding by %.1f um.",
+                    iteration,
+                    domain.x_length_um,
+                    sigma_um,
+                )
+                domain = domain.expanded(dx_um=sigma_um)
+                continue
+
+            # Extract y extent from T_xy (already computed, no new quad calls).
+            y_half_length = 0.0
+            for ix in melt_x_indices:
+                melt_y_mask = T_xy[:, ix] > t_melt
+                if np.any(melt_y_mask):
+                    melt_y_vals = yrange[melt_y_mask]
+                    y_half_length = max(y_half_length, float(np.amax(melt_y_vals) - np.amin(melt_y_vals)))
+
+            needs_expansion_y = np.isclose(y_half_length, y_max)
+            if needs_expansion_y:
+                _logger.info(
+                    "Iteration %d: y domain too small (%.1f um), expanding by %.1f um.",
+                    iteration,
+                    domain.y_length_um,
+                    sigma_um,
+                )
+                domain = domain.expanded(dy_um=sigma_um)
+                continue
+
+            # Compute T_xz only for x-indices inside the melt pool.
+            T_xz = np.full((zrange.size, xrange.size), _T0_K, dtype=np.float64)
+            for ix in melt_x_indices:
+                x_nd = xrange[ix] / sigma
+                for iz in range(zrange.size):
+                    val, _ = quad(_INTEGRAND, 0.0, np.inf, args=(x_nd, 0.0, zrange[iz] / z_scale, thermal_ratio))
+                    T_xz[iz, ix] = _T0_K + temp_scale * val
+
+            z_length = 0.0
+            for ix in melt_x_indices:
+                melt_z_mask = T_xz[:, ix] > t_melt
+                if np.any(melt_z_mask):
+                    melt_z_vals = zrange[melt_z_mask]
+                    z_length = max(z_length, float(np.amax(melt_z_vals) - np.amin(melt_z_vals)))
+
+            needs_expansion_z = np.isclose(z_length, z_span)
+            if needs_expansion_z:
+                _logger.info(
+                    "Iteration %d: z domain too small (%.1f um), expanding by %.1f um.",
+                    iteration,
+                    domain.z_depth_um,
+                    sigma_um,
+                )
+                domain = domain.expanded(dz_um=sigma_um)
+                continue
 
         melt_width = y_half_length * 2.0  # half-domain symmetry
         tf = TemperatureField(
