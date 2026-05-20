@@ -24,12 +24,13 @@ December 1983.
 Reformulation: Sasha Rubenchik, LLNL, 2015.
 """
 
-from ._api import REQUIRED_COLUMNS, compute_melt_pool
+from ._api import compute_melt_pool, compute_printability_map
 from ._core import compute_single_point
 from ._types import (
     BeamParameters,
     MaterialProperties,
     MeltPoolResult,
+    PrintabilityParameters,
     SimulationDomain,
     TemperatureField,
 )
@@ -40,11 +41,11 @@ __all__ = [
     "BeamParameters",
     "MaterialProperties",
     "MeltPoolResult",
+    "PrintabilityParameters",
     "SimulationDomain",
     "TemperatureField",
-    "REQUIRED_COLUMNS",
     "compute_melt_pool",
+    "compute_printability_map",
     "compute_single_point",
     "plot_temperature_field",
-    "__version__",
 ]
