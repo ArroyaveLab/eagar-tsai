@@ -172,3 +172,55 @@ print(result.temperature_field.T_xz.shape)     # (nz, nx) — depth cross-sectio
 
 fig = result.plot(output="temperature_field.png") # equivalently: result.temperature_field.plot(output="temperature_field.png")
 ```
+
+## Printability Maps
+
+`compute_printability_map` sweeps laser power and scan speed over a 2-D grid, runs the Eagar-Tsai model at every point, and classifies each point as `"good"`, `"keyhole"`, `"lack_of_fusion"`, or `"balling"`. `plot_printability_map` wraps the same call and returns a color-coded figure.
+
+```python
+from eagar_tsai import (
+    MaterialProperties,
+    PrintabilityParameters,
+    compute_printability_map,
+    plot_printability_map,
+)
+
+mat = MaterialProperties(
+    liquidus_temperature=1700.0,
+    thermal_conductivity=30.0,
+    density=7800.0,
+    specific_heat=700.0,
+)
+process = PrintabilityParameters(
+    beam_diameter_m=80e-6,
+    absorptivity=0.35,
+    layer_thickness_m=40e-6,
+    hatch_spacing_m=90e-6,
+)
+
+# Compute the raw DataFrame (one row per grid point)
+df = compute_printability_map(
+    process,
+    mat,
+    power_range=(50.0, 400.0),
+    velocity_range=(0.05, 2.0),
+    n_power=50,
+    n_velocity=50,
+    workers=-1,           # -1 uses all available cores
+)
+print(df["defect"].value_counts())
+
+# Compute and render in one call
+fig = plot_printability_map(
+    process,
+    mat,
+    power_range=(50.0, 400.0),
+    velocity_range=(0.05, 2.0),
+    n_power=50,
+    n_velocity=50,
+    workers=-1,
+    output="printability_map.png",
+)
+```
+
+`PrintabilityParameters` holds the parameters that stay fixed while power and velocity vary: `beam_diameter_m`, `absorptivity`, `layer_thickness_m`, and `hatch_spacing_m`. The returned DataFrame contains `power_w`, `velocity_m_s`, `melt_length_um`, `melt_width_um`, `melt_depth_um`, `defect`, and five boolean criterion columns (`lof1`, `lof2`, `ball1`, `ball2`, `kh1`).
