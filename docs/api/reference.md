@@ -6,11 +6,15 @@
 
 ::: eagar_tsai.compute_single_point
 
+::: eagar_tsai.compute_printability_map
+
 ## Data Classes
 
 ::: eagar_tsai.BeamParameters
 
 ::: eagar_tsai.MaterialProperties
+
+::: eagar_tsai.PrintabilityParameters
 
 ::: eagar_tsai.SimulationDomain
 
@@ -21,6 +25,8 @@
 ## Plotting
 
 ::: eagar_tsai.plot.plot_temperature_field
+
+::: eagar_tsai.plot.plot_printability_map
 
 ## Integrand
 

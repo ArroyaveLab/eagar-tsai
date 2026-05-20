@@ -180,3 +180,74 @@ result = compute_melt_pool(
     output_dir=Path("calc_files"),  # saves ET_0000.csv, ET_0001.csv, ...
 )
 ```
+
+## Printability Maps
+
+`compute_printability_map` sweeps laser power and scan speed over a regular grid, runs the Eagar–Tsai model at every grid point, and classifies each point into one of four defect regimes (keyhole porosity, lack of fusion, balling, or good).
+
+The fixed process parameters (beam diameter, absorptivity, layer thickness, hatch spacing) are specified through a `PrintabilityParameters` object:
+
+```python
+from eagar_tsai import (
+    MaterialProperties,
+    PrintabilityParameters,
+    SimulationDomain,
+    compute_printability_map,
+)
+
+mat = MaterialProperties(
+    liquidus_temperature=1700.0,   # K
+    thermal_conductivity=30.0,     # W/(m·K)
+    density=7800.0,                # kg/m³
+    specific_heat=700.0,           # J/(kg·K)
+)
+process = PrintabilityParameters(
+    beam_diameter_m=80e-6,         # m
+    absorptivity=0.35,
+    layer_thickness_m=40e-6,       # m
+    hatch_spacing_m=90e-6,         # m
+)
+
+# 5 µm resolution domain, fast per-point computation
+domain = SimulationDomain(
+    x_length_um=1200.0,
+    y_length_um=1200.0,
+    z_depth_um=1000.0,
+    spatial_resolution_um=5.0,
+)
+
+df = compute_printability_map(
+    process,
+    mat,
+    power_range=(50.0, 400.0),    # W
+    velocity_range=(0.1, 3.0),    # m/s
+    n_power=50,
+    n_velocity=50,
+    domain=domain,
+    workers=-1,                    # use all CPU cores
+)
+print(df["defect"].value_counts())
+```
+
+The returned DataFrame has one row per grid point with columns `power_w`, `velocity_m_s`, `melt_length_um`, `melt_width_um`, `melt_depth_um`, `defect`, and one boolean flag per criterion (`lof1`, `lof2`, `ball1`, `ball2`, `kh1`).
+
+`plot_printability_map` wraps `compute_printability_map` and renders the result directly:
+
+```python
+from eagar_tsai.plot import plot_printability_map
+
+fig = plot_printability_map(
+    process,
+    mat,
+    power_range=(50.0, 400.0),
+    velocity_range=(0.1, 3.0),
+    n_power=50,
+    n_velocity=50,
+    domain=domain,
+    workers=-1,
+    output="printability_map.png",
+)
+```
+
+!!! note "Parallelism"
+    Each grid point is dispatched as an independent task to the worker pool. Workers stay fully utilized even when isolated points require iterative domain expansion.

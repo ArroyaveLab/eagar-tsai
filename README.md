@@ -169,6 +169,65 @@ fig = result.plot(output="temperature_field.png") # equivalently: result.tempera
 
 ---
 
+## Printability Maps
+
+`compute_printability_map` sweeps laser power and scan speed over a regular grid, runs the Eagar–Tsai model at every point, and classifies each point into one of four defect regimes (keyhole porosity, lack of fusion, balling, or good) using the five criteria from Sheikh et al. (2023). Each grid point is dispatched as an independent parallel task, so workers stay fully utilized even when isolated points require iterative domain expansion.
+
+```python
+from eagar_tsai import (
+    MaterialProperties,
+    PrintabilityParameters,
+    SimulationDomain,
+    compute_printability_map,
+)
+from eagar_tsai.plot import plot_printability_map
+
+mat = MaterialProperties(
+    liquidus_temperature=1700.0,
+    thermal_conductivity=30.0,
+    density=7800.0,
+    specific_heat=700.0,
+)
+process = PrintabilityParameters(
+    beam_diameter_m=80e-6,
+    absorptivity=0.35,
+    layer_thickness_m=40e-6,
+    hatch_spacing_m=90e-6,
+)
+domain = SimulationDomain(
+    x_length_um=1200.0,
+    y_length_um=1200.0,
+    z_depth_um=1000.0,
+    spatial_resolution_um=5.0,  # coarser grid, ~25x faster than 1 µm
+)
+
+# Raw data: one row per grid point with defect classification
+df = compute_printability_map(
+    process, mat,
+    power_range=(50.0, 400.0),
+    velocity_range=(0.1, 3.0),
+    n_power=50,
+    n_velocity=50,
+    domain=domain,
+    workers=-1,  # use all CPU cores
+)
+print(df["defect"].value_counts())
+
+# Or render directly as a colour-coded figure
+fig = plot_printability_map(
+    process, mat,
+    power_range=(50.0, 400.0),
+    velocity_range=(0.1, 3.0),
+    n_power=50,
+    n_velocity=50,
+    domain=domain,
+    workers=-1,
+    output="printability_map.png",
+)
+```
+
+---
+
 ## References
 
 - T. W. Eagar and N.-S. Tsai, "Temperature Fields Produced by Traveling Distributed Heat Sources," *Welding Journal (Research Supplement)*, December 1983, pp. 346-s–354-s.
