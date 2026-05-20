@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import numpy as np
 import pytest
 
-from eagar_tsai import BeamParameters, MaterialProperties, SimulationDomain
+from eagar_tsai import BeamParameters, MaterialProperties, PrintabilityParameters, SimulationDomain, TemperatureField
 
 
 @pytest.fixture
@@ -48,4 +49,40 @@ def tiny_domain() -> SimulationDomain:
         y_length_um=30.0,
         z_depth_um=20.0,
         spatial_resolution_um=10.0,
+    )
+
+
+@pytest.fixture
+def printability_domain() -> SimulationDomain:
+    """A mid-size domain for printability map tests."""
+    return SimulationDomain(
+        x_length_um=200.0,
+        y_length_um=200.0,
+        z_depth_um=150.0,
+        spatial_resolution_um=10.0,
+    )
+
+
+@pytest.fixture
+def minimal_temperature_field() -> TemperatureField:
+    """A minimal TemperatureField for constructing MeltPoolResult in unit tests."""
+    dummy = np.zeros((1, 1))
+    return TemperatureField(
+        T_xy=dummy,
+        T_xz=dummy,
+        x_range_m=np.array([0.0]),
+        y_range_m=np.array([0.0]),
+        z_range_m=np.array([0.0]),
+        liquidus_temperature_k=1700.0,
+    )
+
+
+@pytest.fixture
+def printability_params() -> PrintabilityParameters:
+    """Representative printability parameters for 316L stainless steel."""
+    return PrintabilityParameters(
+        beam_diameter_m=100e-6,
+        absorptivity=0.35,
+        layer_thickness_m=40e-6,
+        hatch_spacing_m=90e-6,
     )

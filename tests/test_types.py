@@ -4,24 +4,16 @@ from __future__ import annotations
 
 import math
 
-import numpy as np
 import pytest
 
-from eagar_tsai import BeamParameters, MaterialProperties, MeltPoolResult, SimulationDomain, TemperatureField
+from eagar_tsai import (
+    BeamParameters,
+    MaterialProperties,
+    MeltPoolResult,
+    PrintabilityParameters,
+    SimulationDomain,
+)
 from eagar_tsai._types import _T0_K
-
-
-def _minimal_temperature_field() -> TemperatureField:
-    """Return a minimal TemperatureField suitable for constructing MeltPoolResult in unit tests."""
-    dummy = np.zeros((1, 1))
-    return TemperatureField(
-        T_xy=dummy,
-        T_xz=dummy,
-        x_range_m=np.array([0.0]),
-        y_range_m=np.array([0.0]),
-        z_range_m=np.array([0.0]),
-        liquidus_temperature_k=1700.0,
-    )
 
 
 class TestBeamParameters:
@@ -145,7 +137,7 @@ class TestSimulationDomain:
 class TestMeltPoolResult:
     """Tests for MeltPoolResult."""
 
-    def test_micron_properties(self) -> None:
+    def test_micron_properties(self, minimal_temperature_field) -> None:
         """Micrometre properties are metres x 1e6."""
         r = MeltPoolResult(
             length=500e-6,
@@ -153,11 +145,52 @@ class TestMeltPoolResult:
             depth=150e-6,
             peak_temperature=2000.0,
             min_temperature=300.0,
-            temperature_field=_minimal_temperature_field(),
+            temperature_field=minimal_temperature_field,
         )
         assert math.isclose(r.length_um, 500.0)
         assert math.isclose(r.width_um, 300.0)
         assert math.isclose(r.depth_um, 150.0)
+
+
+class TestPrintabilityParameters:
+    """Tests for PrintabilityParameters."""
+
+    def test_construction_and_um_properties(self) -> None:
+        """µm property accessors return correct values."""
+        p = PrintabilityParameters(
+            beam_diameter_m=80e-6,
+            absorptivity=0.35,
+            layer_thickness_m=40e-6,
+            hatch_spacing_m=90e-6,
+        )
+        assert math.isclose(p.layer_thickness_um, 40.0)
+        assert math.isclose(p.hatch_spacing_um, 90.0)
+
+    def test_frozen(self) -> None:
+        """PrintabilityParameters is immutable."""
+        p = PrintabilityParameters(
+            beam_diameter_m=80e-6,
+            absorptivity=0.35,
+            layer_thickness_m=40e-6,
+            hatch_spacing_m=90e-6,
+        )
+        with pytest.raises((AttributeError, TypeError)):
+            p.absorptivity = 0.5  # ty: ignore[invalid-assignment]
+
+    @pytest.mark.parametrize(
+        "kwargs",
+        [
+            {"beam_diameter_m": -1e-6, "absorptivity": 0.35, "layer_thickness_m": 40e-6, "hatch_spacing_m": 90e-6},
+            {"beam_diameter_m": 80e-6, "absorptivity": 0.0, "layer_thickness_m": 40e-6, "hatch_spacing_m": 90e-6},
+            {"beam_diameter_m": 80e-6, "absorptivity": 1.5, "layer_thickness_m": 40e-6, "hatch_spacing_m": 90e-6},
+            {"beam_diameter_m": 80e-6, "absorptivity": 0.35, "layer_thickness_m": 0.0, "hatch_spacing_m": 90e-6},
+            {"beam_diameter_m": 80e-6, "absorptivity": 0.35, "layer_thickness_m": 40e-6, "hatch_spacing_m": -1e-6},
+        ],
+    )
+    def test_invalid_values(self, kwargs: dict) -> None:
+        """Invalid physical values raise ValueError."""
+        with pytest.raises(ValueError):
+            PrintabilityParameters(**kwargs)
 
 
 class TestConstants:
