@@ -221,11 +221,11 @@ class TestClassifyDefect:
         assert not kh1
         assert defect == "balling"
 
-    def test_good_window(self) -> None:
-        """A well-proportioned melt pool with no criterion firing returns good."""
+    def test_defect_free_window(self) -> None:
+        """A well-proportioned melt pool with no criterion firing is defect-free."""
         defect, lof1, lof2, ball1, ball2, kh1 = _classify_defect(200.0, 250.0, 80.0, 40.0, 90.0)
         assert not kh1 and not lof1 and not lof2 and not ball1 and not ball2
-        assert defect == "good"
+        assert defect == "defect_free"
 
 
 @pytest.mark.slow
@@ -283,4 +283,4 @@ class TestComputePrintabilityMap:
             n_velocity=3,
             domain=printability_domain,
         )
-        assert set(df["defect"].unique()).issubset({"good", "keyhole", "lack_of_fusion", "balling"})
+        assert set(df["defect"].unique()).issubset({"defect_free", "keyhole", "lack_of_fusion", "balling"})

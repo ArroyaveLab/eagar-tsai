@@ -28,13 +28,13 @@ if TYPE_CHECKING:
 
 __all__ = ["plot_printability_map", "plot_temperature_field"]
 
-_DEFECT_ORDER: list[str] = ["keyhole", "lack_of_fusion", "balling", "good"]
+_DEFECT_ORDER: list[str] = ["keyhole", "lack_of_fusion", "balling", "defect_free"]
 _DEFECT_COLORS: list[str] = ["#4878cf", "#d65f5f", "#6acc65", "#f0f0f0"]
 _DEFECT_DISPLAY: dict[str, str] = {
     "keyhole": "Keyhole",
     "lack_of_fusion": "Lack of Fusion",
     "balling": "Balling",
-    "good": "Good",
+    "defect_free": "Defect-Free",
 }
 
 

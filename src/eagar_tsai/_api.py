@@ -251,7 +251,7 @@ def _classify_defect(
     """Classify a single melt pool point into a defect regime.
 
     Applies five physics-based criteria from Sheikh et al. (2023) in priority
-    order: keyhole > lack of fusion > balling > good.
+    order: keyhole > lack of fusion > balling > defect-free.
 
     Args:
         length_um: Melt pool length in µm.
@@ -264,7 +264,7 @@ def _classify_defect(
 
     Returns:
         A tuple ``(defect, lof1, lof2, ball1, ball2, kh1)`` where ``defect``
-        is one of ``"good"``, ``"keyhole"``, ``"lack_of_fusion"``, or
+        is one of ``"defect_free"``, ``"keyhole"``, ``"lack_of_fusion"``, or
         ``"balling"`` and the remaining five elements are the individual
         criterion flags.
     """
@@ -284,7 +284,7 @@ def _classify_defect(
     elif ball1 or ball2:
         defect = "balling"
     else:
-        defect = "good"
+        defect = "defect_free"
 
     return defect, lof1, lof2, ball1, ball2, kh1
 
@@ -306,8 +306,8 @@ def compute_printability_map(
     Runs the Eagar-Tsai model at every (power, velocity) grid point and
     classifies each point using five defect criteria from Sheikh et al. (2023):
     LOF1, LOF2, Ball1, Ball2, and KH1. Points are labeled as one of
-    ``"good"``, ``"keyhole"``, ``"lack_of_fusion"``, or ``"balling"`` in
-    priority order: keyhole > lack of fusion > balling > good.
+    ``"defect_free"``, ``"keyhole"``, ``"lack_of_fusion"``, or ``"balling"`` in
+    priority order: keyhole > lack of fusion > balling > defect-free.
 
     Args:
         params: Fixed process parameters (beam diameter, absorptivity, layer
