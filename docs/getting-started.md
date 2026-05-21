@@ -183,7 +183,7 @@ result = compute_melt_pool(
 
 ## Printability Maps
 
-`compute_printability_map` sweeps laser power and scan speed over a regular grid, runs the Eagar–Tsai model at every grid point, and classifies each point into one of four defect regimes (keyhole porosity, lack of fusion, balling, or good).
+`compute_printability_map` sweeps laser power and scan speed over a regular grid, runs the Eagar–Tsai model at every grid point, and classifies each point into one of four defect regimes (keyhole porosity, lack of fusion, balling, or defect-free).
 
 The fixed process parameters (beam diameter, absorptivity, layer thickness, hatch spacing) are specified through a `PrintabilityParameters` object:
 
