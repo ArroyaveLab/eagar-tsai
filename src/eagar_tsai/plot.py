@@ -13,11 +13,34 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import ListedColormap, Normalize
+from matplotlib.colors import Normalize
 from matplotlib.patches import Patch
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+mpl.rcParams.update(
+    {
+        "font.family": "sans-serif",
+        "font.sans-serif": ["Arial", "Helvetica", "DejaVu Sans"],
+        "font.size": 8,
+        "axes.labelsize": 8,
+        "axes.titlesize": 8,
+        "axes.linewidth": 0.6,
+        "xtick.labelsize": 8,
+        "ytick.labelsize": 8,
+        "xtick.major.width": 0.6,
+        "ytick.major.width": 0.6,
+        "xtick.major.size": 2.3,
+        "ytick.major.size": 2.3,
+        "xtick.direction": "out",
+        "ytick.direction": "out",
+        "savefig.dpi": 300,
+        "pdf.fonttype": 42,
+        "ps.fonttype": 42,
+    }
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -131,14 +154,15 @@ def _render_temperature_panels(
 
     if annotate and field.melt_width_m > 0.0:
         w_um = field.melt_width_m * 1e6
+        x_width_um = x_um[int(np.argmax(np.sum(t_xy_mirror >= liquidus, axis=0)))]
         ax_a.annotate(
             "",
-            xy=(0.0, w_um / 2.0),
-            xytext=(0.0, -w_um / 2.0),
+            xy=(x_width_um, w_um / 2.0),
+            xytext=(x_width_um, -w_um / 2.0),
             arrowprops={"arrowstyle": "<->", "lw": 0.8, "color": "white"},
         )
         ax_a.text(
-            10.0,
+            x_width_um + 10.0,
             0.0,
             f"W = {w_um:.0f} µm",
             color="white",
@@ -169,14 +193,15 @@ def _render_temperature_panels(
 
     if annotate and field.melt_depth_m > 0.0:
         d_um = field.melt_depth_m * 1e6
+        x_depth_um = x_um[int(np.argmax(np.sum(t_xz_display >= liquidus, axis=0)))]
         ax_b.annotate(
             "",
-            xy=(0.0, d_um),
-            xytext=(0.0, 0.0),
+            xy=(x_depth_um, d_um),
+            xytext=(x_depth_um, 0.0),
             arrowprops={"arrowstyle": "<->", "lw": 0.8, "color": "white"},
         )
         ax_b.text(
-            10.0,
+            x_depth_um + 10.0,
             d_um / 2.0,
             f"D = {d_um:.0f} µm",
             color="white",
@@ -206,6 +231,7 @@ def plot_printability_map(
     domain: SimulationDomain | None = None,
     workers: int | None = None,
     output: str | Path | None = None,
+    show_data_points: bool = False,
 ) -> matplotlib.figure.Figure:
     """Compute and render a printability map over a laser power * scan speed grid.
 
@@ -229,6 +255,8 @@ def plot_printability_map(
             runs serially; ``-1`` uses all available cores.
         output: File path to save the figure. When ``None`` the figure is returned
             without saving.
+        show_data_points: When ``True``, overlay a scatter marker at every
+            computed grid point. Defaults to ``False``.
 
     Returns:
         A ``matplotlib.figure.Figure`` with a single axes showing the printability
@@ -254,30 +282,54 @@ def plot_printability_map(
     velocities = np.linspace(velocity_range[0], velocity_range[1], n_velocity)
     powers = np.linspace(power_range[0], power_range[1], n_power)
 
-    cmap = ListedColormap(_DEFECT_COLORS)
+    from scipy.ndimage import gaussian_filter
 
-    fig, ax = plt.subplots(figsize=(5.5, 4.0))
-    ax.pcolormesh(
-        velocities,
-        powers,
-        codes.T,
-        cmap=cmap,
-        vmin=-0.5,
-        vmax=3.5,
-        shading="nearest",
-    )
+    n_classes = len(_DEFECT_ORDER)
+    one_hot = np.zeros((n_classes, n_velocity, n_power))
+    for i in range(n_classes):
+        one_hot[i] = (codes == i).astype(float)
+    render = np.stack([gaussian_filter(one_hot[i], sigma=1.0) for i in range(n_classes)])
+
+    fig, ax = plt.subplots(figsize=(3.504, 3.504 + 0.45), constrained_layout=True)
+
+    _PLOT_ORDER = [1, 3, 2, 0]  # lack_of_fusion - defect_free - balling - keyhole
+    for i in _PLOT_ORDER:
+        if np.any(codes == i):
+            others_max = np.max([render[j] for j in range(n_classes) if j != i], axis=0)
+            margin = render[i] - others_max
+            ax.contourf(velocities, powers, margin.T, levels=[0.0, 2.0], colors=[_DEFECT_COLORS[i]], alpha=0.8)
+
+    if show_data_points:
+        _color_map = {label: _DEFECT_COLORS[i] for i, label in enumerate(_DEFECT_ORDER)}
+        ax.scatter(
+            df["velocity_m_s"],
+            df["power_w"],
+            s=6,
+            c=[_color_map[d] for d in df["defect"]],
+            edgecolors="black",
+            linewidths=0.4,
+            zorder=3,
+        )
 
     legend_handles = [
         Patch(facecolor=_DEFECT_COLORS[i], edgecolor="0.4", linewidth=0.6, label=_DEFECT_DISPLAY[label])
         for i, label in enumerate(_DEFECT_ORDER)
         if label in set(df["defect"])
     ]
-    ax.legend(handles=legend_handles, loc="upper right", framealpha=0.9, fontsize=8)
+    ax.legend(
+        handles=legend_handles,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 1.0),
+        ncol=len(legend_handles),
+        frameon=False,
+        fontsize=8,
+        columnspacing=0.8,
+        handlelength=1.0,
+        handletextpad=0.4,
+    )
 
     ax.set_xlabel("Scan Speed (m/s)")
     ax.set_ylabel("Laser Power (W)")
-
-    fig.tight_layout()
 
     if output is not None:
         fig.savefig(output, bbox_inches="tight")
