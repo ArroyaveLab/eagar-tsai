@@ -43,7 +43,9 @@ theme:
 
 markdown_extensions:
   - admonition
+  - attr_list
   - md_in_html
+  - pymdownx.blocks.caption
   - pymdownx.details
   - pymdownx.superfences
   - pymdownx.snippets
@@ -58,6 +60,9 @@ markdown_extensions:
       alternate_style: true
   - pymdownx.arithmatex:
       generic: true
+
+extra_css:
+  - stylesheets/extra.css
 
 extra_javascript:
   - javascripts/mathjax.js
@@ -84,7 +89,8 @@ plugins:
 
 nav:
   - Home: index.md
-  - Getting Started: getting-started.md
+  - Installation: installation.md
+  - Usage: usage.md
   - Methodology: methodology.md
   - API Reference:
       - Overview: api/reference.md
