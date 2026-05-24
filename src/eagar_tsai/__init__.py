@@ -36,7 +36,7 @@ from ._types import (
 )
 from .plot import plot_printability_map, plot_temperature_field
 
-__version__ = "0.2.2"
+__version__ = "0.3.0"
 __all__ = [
     "BeamParameters",
     "MaterialProperties",
