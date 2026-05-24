@@ -13,7 +13,7 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19837225.svg)](https://doi.org/10.5281/zenodo.19837225)
 
-`eagar-tsai` is a Python library implementing the Eagar–Tsai moving heat source model to estimate melt pool dimensions (length, width, depth) for a scanning laser over a semi-infinite solid. Temperature fields are computed via a 1D integral; melt pool dimensions are extracted from the liquidus isotherm.
+`eagar-tsai` is a Python library implementing the Eagar–Tsai moving heat source model to estimate melt pool dimensions (length, width, depth) for a scanning laser over a semi-infinite solid. Temperature fields are computed via a 1D integral; melt pool dimensions are extracted from the liquidus isotherm. Built-in plotting covers temperature field heatmaps and power-velocity printability maps.
 
 <p>
   <a href="https://github.com/ArroyaveLab/eagar-tsai/issues/new?labels=bug">Report a Bug</a> |
@@ -27,8 +27,7 @@
 
 ## Installation
 
-> [!NOTE]
-> A C compiler is required: GCC or Clang on Linux/macOS; MSVC Build Tools or MinGW-w64 on Windows. The C extension is compiled automatically during installation.
+Pre-built binary wheels are published to PyPI for Python 3.11, 3.12, and 3.13 on Linux (x86-64, i686), macOS (x86-64 and Apple Silicon), and Windows (AMD64). If a matching wheel exists for your platform, no C compiler is needed.
 
 ```sh
 # Recommended — using uv
@@ -37,6 +36,9 @@ uv add eagar-tsai
 # Alternative — using pip
 pip install eagar-tsai
 ```
+
+> [!NOTE]
+> If no pre-built wheel matches your platform (for example, a non-standard Linux architecture or a Python version outside the supported range), the package falls back to building from source. In that case a C compiler is required: GCC or Clang on Linux/macOS; MSVC Build Tools or MinGW-w64 on Windows.
 
 ---
 
@@ -53,20 +55,23 @@ beam = BeamParameters(
         velocity=0.5,
         absorptivity=0.35
 )
-mat = MaterialProperties(
+
+material = MaterialProperties(
         liquidus_temperature=1700.0,
         thermal_conductivity=30.0,
         density=7800.0,
         specific_heat=700.0
 )
-dom = SimulationDomain(
+
+domain = SimulationDomain(
         x_length_um=1200.0,
         y_length_um=1200.0,
         z_depth_um=1000.0,
         spatial_resolution_um=1.0,
 )
 
-result = compute_single_point(beam, mat, dom)
+result = compute_single_point(beam, material, domain)
+
 print(f"Length: {result.length_um:.1f} µm")
 print(f"Width:  {result.width_um:.1f} µm")
 print(f"Depth:  {result.depth_um:.1f} µm")
@@ -140,14 +145,14 @@ beam = BeamParameters(
         absorptivity=0.35
 )
 
-mat  = MaterialProperties(
+material  = MaterialProperties(
         liquidus_temperature=1700.0,
         thermal_conductivity=30.0,
         density=7800.0,
         specific_heat=700.0
 )
 
-dom = SimulationDomain(
+domain = SimulationDomain(
         x_length_um=320.0,
         y_length_um=110.0,
         z_depth_um=60.0,
@@ -156,8 +161,8 @@ dom = SimulationDomain(
 
 result = compute_single_point(
         beam=beam,
-        material=mat,
-        domain=dom
+        material=material,
+        domain=domain
 )
 
 print(result.length_um)                        # melt pool length in µm
@@ -165,6 +170,14 @@ print(result.temperature_field.T_xy.shape)     # (ny, nx) — surface plane in K
 print(result.temperature_field.T_xz.shape)     # (nz, nx) — depth cross-section in Kelvin
 
 fig = result.plot(output="temperature_field.png") # equivalently: result.temperature_field.plot(output="temperature_field.png")
+```
+
+The standalone convenience function skips constructing the `MeltPoolResult` object explicitly:
+
+```python
+from eagar_tsai.plot import plot_temperature_field
+
+fig = plot_temperature_field(beam, material, domain, output="temperature_field.png")
 ```
 
 ---
@@ -182,18 +195,20 @@ from eagar_tsai import (
 )
 from eagar_tsai.plot import plot_printability_map
 
-mat = MaterialProperties(
+material = MaterialProperties(
     liquidus_temperature=1700.0,
     thermal_conductivity=30.0,
     density=7800.0,
     specific_heat=700.0,
 )
+
 process = PrintabilityParameters(
     beam_diameter_m=80e-6,
     absorptivity=0.35,
     layer_thickness_m=40e-6,
     hatch_spacing_m=90e-6,
 )
+
 domain = SimulationDomain(
     x_length_um=1200.0,
     y_length_um=1200.0,
@@ -203,7 +218,8 @@ domain = SimulationDomain(
 
 # Raw data: one row per grid point with defect classification
 df = compute_printability_map(
-    process, mat,
+    process,
+    material,
     power_range=(50.0, 400.0),
     velocity_range=(0.1, 3.0),
     n_power=50,
@@ -211,11 +227,13 @@ df = compute_printability_map(
     domain=domain,
     workers=-1,  # use all CPU cores
 )
+
 print(df["defect"].value_counts())
 
-# Or render directly as a colour-coded figure
+# Or render directly as a color-coded figure
 fig = plot_printability_map(
-    process, mat,
+    process,
+    material,
     power_range=(50.0, 400.0),
     velocity_range=(0.1, 3.0),
     n_power=50,
