@@ -236,7 +236,7 @@ def plot_printability_map(
     """Compute and render a printability map over a laser power * scan speed grid.
 
     Calls ``compute_printability_map`` internally and renders the resulting
-    defect classification as a colour-coded map with laser power on the Y-axis
+    defect classification as a color-coded map with laser power on the Y-axis
     and scan speed on the X-axis.
 
     Args:
@@ -260,7 +260,7 @@ def plot_printability_map(
 
     Returns:
         A ``matplotlib.figure.Figure`` with a single axes showing the printability
-        map coloured by defect regime.
+        map colored by defect regime.
     """
     from ._api import compute_printability_map
 
@@ -312,7 +312,7 @@ def plot_printability_map(
         )
 
     legend_handles = [
-        Patch(facecolor=_DEFECT_COLORS[i], edgecolor="0.4", linewidth=0.6, label=_DEFECT_DISPLAY[label])
+        Patch(facecolor=_DEFECT_COLORS[i], edgecolor=_DEFECT_COLORS[i], label=_DEFECT_DISPLAY[label])
         for i, label in enumerate(_DEFECT_ORDER)
         if label in set(df["defect"])
     ]
