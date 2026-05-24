@@ -89,10 +89,17 @@ The temperature field is evaluated on two planes:
 
 The melt pool boundary is the liquidus isotherm $T = T_\mathrm{liq}$. The three dimensions are extracted as:
 
-| Dimension | Definition |
-|-----------|-----------|
-| Length | Extent of $T \geq T_\mathrm{liq}$ along $x$ |
-| Width | $2 \times$ half-extent of $T \geq T_\mathrm{liq}$ along $y$ at the surface |
-| Depth | Extent of $T \geq T_\mathrm{liq}$ along $z$ at the centerline |
+| Dimension | Definition                                                                 |
+|-----------|----------------------------------------------------------------------------|
+| Length    | Extent of $T \geq T_\mathrm{liq}$ along $x$                                |
+| Width     | $2 \times$ half-extent of $T \geq T_\mathrm{liq}$ along $y$ at the surface |
+| Depth     | Extent of $T \geq T_\mathrm{liq}$ along $z$ at the centerline              |
 
 If the melt pool reaches any domain boundary, the domain is automatically expanded and the computation is repeated (up to 20 iterations).
+
+The figure below shows how melt pool length, width, and depth vary across a laser power–scan speed grid for 316L stainless steel, illustrating the expected monotonic trends with power and the non-linear response with scan speed.
+
+<figure markdown="span" style="width: 100%; display: block; text-align: center;">
+    ![Melt pool length, width, and depth as a function of laser power and scan velocity for 316L stainless steel](img/melt_dimensions_sweep.png){ width="600" }
+    <figcaption style="display: block; width: 100%; max-width: 100%;">Melt pool length, width, and depth as a function of laser power and scan velocity for 316L stainless steel (T<sub>liq</sub> = 1700 K, k = 30 W/(m·K), ρ = 7800 kg/m³, c<sub>p</sub> = 700 J/(kg·K)). Beam parameters: d = 100 µm, A = 0.35. Grid: P = 150–350 W in 25 W steps (9 points), v = 0.30–1.20 m/s in 0.15 m/s steps (7 points).</figcaption>
+</figure>
