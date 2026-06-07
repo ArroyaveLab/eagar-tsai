@@ -11,15 +11,18 @@ import concurrent.futures
 import logging
 import math
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
 
-from ._core import compute_single_point
+from ._core import compute_single_point, compute_temperature_volume
 from ._types import BeamParameters, MaterialProperties, PrintabilityParameters, SimulationDomain
 
-__all__ = ["compute_melt_pool", "compute_printability_map"]
+if TYPE_CHECKING:
+    from ._types import TemperatureVolume
+
+__all__ = ["compute_melt_pool", "compute_printability_map", "compute_temperature_volumes"]
 
 _logger = logging.getLogger(__name__)
 
@@ -419,3 +422,101 @@ def compute_printability_map(
             "kh1": list(kh1s),
         }
     )
+
+
+def _process_volume_row(
+    args: tuple[pd.Series, SimulationDomain | None, int],
+) -> TemperatureVolume | None:
+    """Compute the 3-D temperature volume for a single DataFrame row.
+
+    Top-level module function so it can be pickled for ``ProcessPoolExecutor``.
+
+    Args:
+        args: Tuple of ``(row, domain, chunk_size)``.
+
+    Returns:
+        A ``TemperatureVolume``, or ``None`` if the computation fails.
+    """
+    row, domain, chunk_size = args
+    try:
+        beam = BeamParameters(
+            beam_diameter=float(row["beam_diameter_m"]),
+            power=float(row["power_w"]),
+            velocity=float(row["velocity_m_s"]),
+            absorptivity=float(row["absorptivity"]),
+        )
+        material = MaterialProperties(
+            liquidus_temperature=float(row["liquidus_temperature_k"]),
+            thermal_conductivity=float(row["thermal_conductivity_w_mk"]),
+            density=float(row["density_kg_m3"]),
+            specific_heat=float(row["specific_heat_j_kgk"]),
+        )
+        return compute_temperature_volume(beam, material, domain, workers=1, chunk_size=chunk_size)
+    except Exception as exc:
+        _logger.error("Error computing temperature volume for row %s: %s", row.name, exc)
+        return None
+
+
+def compute_temperature_volumes(
+    data: pd.DataFrame,
+    *,
+    domain: SimulationDomain | None = None,
+    workers: int | None = None,
+    chunk_size: int = 10,
+) -> list[TemperatureVolume | None]:
+    """Compute the full 3-D temperature volume for every row in a DataFrame.
+
+    Each row is processed independently. When ``workers > 1``, rows are
+    dispatched to a ``ProcessPoolExecutor``; each row's internal computation
+    runs serially within its worker to avoid nested process pools.
+
+    Args:
+        data: Input DataFrame. Must contain the columns listed in
+            ``_REQUIRED_COLUMNS``.
+        domain: Starting simulation domain for the auto-sizing step in each
+            row. When ``None``, the default ``SimulationDomain()`` is used.
+        workers: Worker processes. ``None`` or ``1`` runs serially.
+            ``-1`` uses all available cores. Parallelism is across rows;
+            use ``workers=-1`` when processing many parameter sets.
+        chunk_size: Number of x-index slices per internal task for each
+            row's 3-D computation.
+
+    Returns:
+        A list of ``TemperatureVolume`` objects, one per row of ``data``,
+        index-aligned with the input DataFrame. Failed rows return ``None``.
+
+    Raises:
+        TypeError: If ``data`` is not a pandas DataFrame.
+        ValueError: If any required column is absent from ``data``.
+
+    Examples:
+        ```python
+        import pandas as pd
+        from eagar_tsai import compute_temperature_volumes
+
+        df = pd.DataFrame({
+            "velocity_m_s": [0.5, 1.0],
+            "power_w": [200.0, 300.0],
+            "beam_diameter_m": [100e-6, 100e-6],
+            "absorptivity": [0.35, 0.35],
+            "liquidus_temperature_k": [1700.0, 1700.0],
+            "thermal_conductivity_w_mk": [30.0, 30.0],
+            "density_kg_m3": [7800.0, 7800.0],
+            "specific_heat_j_kgk": [700.0, 700.0],
+        })
+        volumes = compute_temperature_volumes(df, workers=-1)
+        volumes[0].export_vti("row0_volume.vti")
+        ```
+    """
+    if not isinstance(data, pd.DataFrame):
+        raise TypeError(f"data must be a pandas DataFrame, got {type(data).__name__!r}")
+    _validate_columns(data)
+
+    row_args = [(row, domain, chunk_size) for _, row in data.iterrows()]
+
+    if workers is None or workers == 1:
+        return [_process_volume_row(a) for a in row_args]
+
+    max_workers = None if workers == -1 else workers
+    with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
+        return list(executor.map(_process_volume_row, row_args))

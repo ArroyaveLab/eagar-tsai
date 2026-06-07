@@ -11,14 +11,21 @@ Example:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import logging
+from typing import TYPE_CHECKING, Any
 
 import matplotlib as mpl
+import matplotlib.figure
 import matplotlib.pyplot as plt
 import numpy as np
+import pyvista as pv
 from matplotlib.colors import Normalize
 from matplotlib.patches import Patch
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+from ._types import _T0_K
+
+_logger = logging.getLogger(__name__)
 
 mpl.rcParams.update(
     {
@@ -45,14 +52,19 @@ mpl.rcParams.update(
 if TYPE_CHECKING:
     from pathlib import Path
 
-    import matplotlib.figure
+    from ._types import (
+        BeamParameters,
+        MaterialProperties,
+        PrintabilityParameters,
+        SimulationDomain,
+        TemperatureField,
+        TemperatureVolume,
+    )
 
-    from ._types import BeamParameters, MaterialProperties, PrintabilityParameters, SimulationDomain, TemperatureField
-
-__all__ = ["plot_printability_map", "plot_temperature_field"]
+__all__ = ["plot_printability_map", "plot_temperature_field", "plot_temperature_field_3d"]
 
 _DEFECT_ORDER: list[str] = ["keyhole", "lack_of_fusion", "balling", "defect_free"]
-_DEFECT_COLORS: list[str] = ["#4878cf", "#d65f5f", "#6acc65", "#f0f0f0"]
+_DEFECT_COLORS: list[str] = ["#225ea7", "#40b5c3", "#c6e8b4", "#ffffff"]
 _DEFECT_DISPLAY: dict[str, str] = {
     "keyhole": "Keyhole",
     "lack_of_fusion": "Lack of Fusion",
@@ -312,7 +324,7 @@ def plot_printability_map(
         )
 
     legend_handles = [
-        Patch(facecolor=_DEFECT_COLORS[i], edgecolor=_DEFECT_COLORS[i], label=_DEFECT_DISPLAY[label])
+        Patch(facecolor=_DEFECT_COLORS[i], edgecolor="#333333", linewidth=0.4, label=_DEFECT_DISPLAY[label])
         for i, label in enumerate(_DEFECT_ORDER)
         if label in set(df["defect"])
     ]
@@ -335,3 +347,272 @@ def plot_printability_map(
         fig.savefig(output, bbox_inches="tight")
 
     return fig
+
+
+def _build_pyvista_grid(volume: TemperatureVolume, *, mirror_y: bool) -> Any:
+    """Build a ``pyvista.ImageData`` grid from a ``TemperatureVolume``.
+
+    Args:
+        volume: Pre-computed 3-D temperature volume.
+        mirror_y: When ``True``, mirror the y-axis to produce the full
+            symmetric melt pool.
+
+    Returns:
+        A ``pyvista.ImageData`` with ``"Temperature_K"`` point data.
+    """
+    T = volume.T_xyz
+    x_um = volume.x_range_um
+    y_um = volume.y_range_um
+    z_um = volume.z_range_um
+
+    if mirror_y:
+        T = np.concatenate([T[:, :0:-1, :], T], axis=1)
+        y_um = np.concatenate([-y_um[:0:-1], y_um])
+
+    dx = float(x_um[1] - x_um[0]) if x_um.size > 1 else 1.0
+    dy = float(y_um[1] - y_um[0]) if y_um.size > 1 else 1.0
+    dz = float(z_um[1] - z_um[0]) if z_um.size > 1 else 1.0
+
+    grid = pv.ImageData(
+        dimensions=(x_um.size, y_um.size, z_um.size),
+        spacing=(dx, dy, dz),
+        origin=(float(x_um[0]), float(y_um[0]), float(z_um[0])),
+    )
+    grid.point_data["Temperature_K"] = np.ascontiguousarray(T).ravel(order="F")
+    return grid
+
+
+def _export_vti(
+    volume: TemperatureVolume,
+    path: str | Path,
+    *,
+    mirror_y: bool = True,
+) -> Path:
+    """Export a ``TemperatureVolume`` to a VTK ImageData (.vti) file.
+
+    Called by ``TemperatureVolume.export_vti()``.
+
+    Args:
+        volume: Pre-computed 3-D temperature volume.
+        path: Output file path.
+        mirror_y: When ``True``, mirror the y-axis before export.
+
+    Returns:
+        The resolved absolute path to the written file.
+    """
+    from pathlib import Path as _Path
+
+    grid = _build_pyvista_grid(volume, mirror_y=mirror_y)
+    out_path = _Path(path).resolve()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    grid.save(str(out_path))
+    return out_path
+
+
+def _render_temperature_volume(
+    volume: TemperatureVolume,
+    *,
+    mirror_y: bool = True,
+    liquidus_contour: bool = True,
+    show_scalar_bar: bool = True,
+    off_screen: bool = False,
+    output: str | Path | None = None,
+    return_plotter: bool = False,
+) -> matplotlib.figure.Figure | pv.Plotter:
+    """Render the 3-D temperature volume interactively with PyVista.
+
+    Called by ``TemperatureVolume.plot_3d()``.
+
+    Args:
+        volume: Pre-computed 3-D temperature volume.
+        mirror_y: When ``True``, mirror the y-axis to show the full melt pool.
+        liquidus_contour: When ``True``, overlay the liquidus isotherm surface.
+        show_scalar_bar: When ``True`` (default), show the temperature color bar.
+        off_screen: When ``True``, render off-screen.
+        output: File path to save the rendered image (e.g. ``"volume.png"``).
+            PDF, SVG, and EPS paths are saved with ``save_graphic``; all other
+            extensions are saved as a raster screenshot. When ``None`` the
+            plotter is returned without saving.
+        return_plotter: When ``True``, return the ``pyvista.Plotter`` directly.
+            When ``False`` (default), render off-screen and return a
+            ``matplotlib.figure.Figure`` containing the captured image.
+
+    Returns:
+        A ``matplotlib.figure.Figure`` when ``return_plotter=False``, or the
+        ``pyvista.Plotter`` instance when ``return_plotter=True``.
+    """
+    grid = _build_pyvista_grid(volume, mirror_y=mirror_y)
+
+    pv.global_theme.font.family = "arial"
+    pv.global_theme.font.size = 22
+    pv.global_theme.font.color = "black"
+
+    plotter = pv.Plotter(off_screen=off_screen or output is not None or not return_plotter)
+    plotter.set_background("white")  # ty: ignore[invalid-argument-type]
+
+    clipped = grid.clip(normal="y", origin=(0.0, 0.0, 0.0))
+    plotter.add_mesh(clipped, scalars="Temperature_K", cmap="cividis", show_scalar_bar=False)
+    if show_scalar_bar and return_plotter:
+        plotter.add_scalar_bar(  # ty: ignore[missing-argument]
+            title="T (K)",
+            title_font_size=30,
+            label_font_size=26,
+            font_family="arial",
+            color="black",
+            fmt="%.0f",
+            n_labels=4,
+            vertical=False,
+            width=0.90,
+            height=0.07,
+            position_x=0.05,
+            position_y=0.02,
+        )
+
+    plotter.add_mesh(grid.outline(), color="#555555", line_width=1.0)
+
+    if mirror_y:
+        front_half = grid.clip(normal=[0.0, -1.0, 0.0], origin=(0.0, 0.0, 0.0))
+        plotter.add_mesh(front_half, color="#aaaaaa", opacity=0.35, show_scalar_bar=False)
+
+    if liquidus_contour:
+        t_l = volume.liquidus_temperature_k
+        surface = clipped.extract_surface(algorithm="dataset_surface")
+        tube = surface.contour([t_l], scalars="Temperature_K").tube(radius=1.0)
+        if tube.n_points:
+            plotter.add_mesh(tube, color="cyan", line_width=4, render_lines_as_tubes=True)
+        else:
+            t_data = grid.point_data["Temperature_K"]
+            _logger.warning(
+                "No liquidus contour found at T_L = %.1f K. Temperature range in volume: %.1f – %.1f K.",
+                t_l,
+                float(t_data.min()),
+                float(t_data.max()),
+            )
+
+    plotter.reset_camera()  # ty: ignore[missing-argument]
+    cam = plotter.camera
+    fp = np.asarray(cam.focal_point)
+    look = np.asarray(cam.position) - fp
+    look /= np.linalg.norm(look)
+    screen_up = np.asarray(cam.up)
+    screen_up -= np.dot(screen_up, look) * look
+    screen_up /= np.linalg.norm(screen_up)
+    cam.focal_point = tuple(fp - 0.12 * (grid.bounds[1] - grid.bounds[0]) * screen_up)
+    cam.zoom(1.2)
+
+    if return_plotter:
+        if output is not None:
+            from pathlib import Path as _Path
+
+            suffix = _Path(output).suffix.lower()
+            if suffix in {".pdf", ".svg", ".eps"}:
+                plotter.save_graphic(str(output))
+            else:
+                plotter.screenshot(str(output))
+        return plotter
+
+    img = plotter.screenshot(return_img=True)
+    plotter.close()
+    assert img is not None
+
+    fig = plt.figure(figsize=(4.0, 3.2), constrained_layout=False)
+    gs = fig.add_gridspec(2, 1, height_ratios=[1.0, 0.085], hspace=0.04)
+    ax = fig.add_subplot(gs[0])
+    cax = fig.add_subplot(gs[1])
+
+    ax.imshow(img, aspect="auto")
+    ax.axis("off")
+
+    T_max = float(volume.T_xyz.max())
+    sm = mpl.cm.ScalarMappable(cmap="cividis", norm=Normalize(vmin=_T0_K, vmax=T_max))
+    sm.set_array([])
+    cbar = fig.colorbar(sm, cax=cax, orientation="horizontal")
+    cbar.ax.tick_params(labelsize=8, length=1.7, width=0.4, pad=0.8)
+    cbar.ax.xaxis.set_ticks_position("bottom")
+    cbar.ax.xaxis.set_label_position("bottom")
+    cbar.set_label("T (K)", fontsize=8, labelpad=4.0)
+    cbar.outline.set_linewidth(0.4)  # ty: ignore[call-non-callable]
+
+    if output is not None:
+        fig.savefig(str(output), bbox_inches="tight")
+
+    return fig
+
+
+def plot_temperature_field_3d(
+    beam: BeamParameters,
+    material: MaterialProperties,
+    domain: SimulationDomain | None = None,
+    *,
+    workers: int | None = None,
+    chunk_size: int = 10,
+    output: str | Path | None = None,
+    output_vti: str | Path | None = None,
+    mirror_y: bool = True,
+    liquidus_contour: bool = True,
+    show_scalar_bar: bool = True,
+    return_plotter: bool = False,
+) -> matplotlib.figure.Figure | pv.Plotter:
+    """Compute and render the 3-D Eagar-Tsai temperature volume.
+
+    Internally calls ``compute_temperature_volume`` to auto-size the domain and
+    evaluate the full ``(nx, ny, nz)`` temperature array, then renders the
+    result with PyVista.
+
+    Args:
+        beam: Laser beam and process parameters.
+        material: Material thermal properties.
+        domain: Starting simulation domain for auto-sizing. When ``None``,
+            the default ``SimulationDomain()`` is used.
+        workers: Worker processes for parallel x-slice computation.
+            ``None`` or ``1`` runs serially. ``-1`` uses all available cores.
+        chunk_size: Number of x-index slices per worker task.
+        output: File path to save the PyVista-rendered image directly
+            (e.g. ``"volume.png"``). Only used when ``return_plotter=True``.
+            PDF, SVG, and EPS paths use PyVista's ``save_graphic``; all other
+            extensions are saved as a raster screenshot.
+        output_vti: When provided, also export the volume to a ``.vti`` file
+            at this path before rendering.
+        mirror_y: When ``True`` (default), mirror the y-axis to show the
+            full symmetric melt pool.
+        liquidus_contour: When ``True`` (default), overlay the liquidus
+            isotherm as a contour surface.
+        show_scalar_bar: When ``True`` (default), show the temperature color bar.
+        return_plotter: When ``True``, return the interactive
+            ``pyvista.Plotter`` directly. When ``False`` (default), render
+            off-screen and return a ``matplotlib.figure.Figure`` containing
+            the captured image.
+
+    Returns:
+        A ``matplotlib.figure.Figure`` when ``return_plotter=False``, or the
+        ``pyvista.Plotter`` instance when ``return_plotter=True``.
+
+    Examples:
+        ```python
+        from eagar_tsai import BeamParameters, MaterialProperties
+        from eagar_tsai.plot import plot_temperature_field_3d
+
+        beam = BeamParameters(beam_diameter=80e-6, power=250.0, velocity=0.5, absorptivity=0.59)
+        mat = MaterialProperties(liquidus_temperature=3455.0, thermal_conductivity=23.75,
+                                 density=18038.9, specific_heat=251.6)
+
+        # Default: returns a matplotlib Figure (off-screen render)
+        fig = plot_temperature_field_3d(beam, mat, workers=-1)
+
+        # Interactive PyVista window
+        plotter = plot_temperature_field_3d(beam, mat, workers=-1, return_plotter=True)
+        ```
+    """
+    from ._core import compute_temperature_volume
+
+    volume = compute_temperature_volume(beam, material, domain, workers=workers, chunk_size=chunk_size)
+    if output_vti is not None:
+        _export_vti(volume, output_vti, mirror_y=mirror_y)
+    return _render_temperature_volume(
+        volume,
+        mirror_y=mirror_y,
+        liquidus_contour=liquidus_contour,
+        show_scalar_bar=show_scalar_bar,
+        output=output,
+        return_plotter=return_plotter,
+    )

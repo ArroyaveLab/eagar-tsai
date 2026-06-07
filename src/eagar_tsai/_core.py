@@ -16,6 +16,7 @@ where all coordinates are non-dimensionalised by the beam sigma parameter.
 
 from __future__ import annotations
 
+import concurrent.futures
 import logging
 import math
 from typing import TYPE_CHECKING
@@ -30,12 +31,13 @@ from ._types import (
     MeltPoolResult,
     SimulationDomain,
     TemperatureField,
+    TemperatureVolume,
 )
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-__all__ = ["compute_single_point", "eagar_tsai_integrand"]
+__all__ = ["compute_single_point", "compute_temperature_volume", "eagar_tsai_integrand"]
 
 _logger = logging.getLogger(__name__)
 
@@ -435,4 +437,125 @@ def compute_single_point(
 
     raise RuntimeError(
         f"Domain expansion did not converge after {_MAX_EXPANSION_ITERS} iterations. Consider increasing the default domain size."
+    )
+
+
+def _compute_volume_x_slice(
+    args: tuple[int, int, np.ndarray, np.ndarray, np.ndarray, float, float, float, float],
+) -> np.ndarray:
+    """Compute temperature for a contiguous range of x-slices in the 3-D volume.
+
+    Top-level module function so it can be pickled for ``ProcessPoolExecutor``.
+
+    Args:
+        args: Tuple of ``(ix_start, ix_end, x_range, y_range, z_range,
+            sigma, z_scale, thermal_ratio, temp_scale)``.
+            Coordinate arrays must be in metres.
+
+    Returns:
+        Array of shape ``(ix_end - ix_start, ny, nz)`` in Kelvin.
+    """
+    ix_start, ix_end, x_range, y_range, z_range, sigma, z_scale, thermal_ratio, temp_scale = args
+    ny = y_range.size
+    nz = z_range.size
+    T_slice = np.empty((ix_end - ix_start, ny, nz), dtype=np.float64)
+    for i, ix in enumerate(range(ix_start, ix_end)):
+        x_nd = x_range[ix] / sigma
+        for iy in range(ny):
+            y_nd = y_range[iy] / sigma
+            for iz in range(nz):
+                val, _ = quad(_INTEGRAND, 0.0, np.inf, args=(x_nd, y_nd, z_range[iz] / z_scale, thermal_ratio))
+                T_slice[i, iy, iz] = _T0_K + temp_scale * val
+    return T_slice
+
+
+def compute_temperature_volume(
+    beam: BeamParameters,
+    material: MaterialProperties,
+    domain: SimulationDomain | None = None,
+    *,
+    workers: int | None = None,
+    chunk_size: int = 10,
+) -> TemperatureVolume:
+    """Compute the full 3-D temperature volume for a single set of process parameters.
+
+    The spatial domain is auto-sized by first running the standard 2-D melt
+    pool computation (``compute_single_point``), which iteratively expands the
+    domain until the melt pool fits within all boundaries. The 3-D volume is
+    then evaluated on that converged domain.
+
+    Computation is parallelised over contiguous x-index slices using
+    ``concurrent.futures.ProcessPoolExecutor`` when ``workers > 1``.
+
+    Args:
+        beam: Laser beam and process parameters.
+        material: Material thermal properties.
+        domain: Starting simulation domain for the auto-sizing step.
+            When ``None``, the default ``SimulationDomain()`` is used.
+        workers: Worker processes for parallel x-slice computation.
+            ``None`` or ``1`` runs serially. ``-1`` uses all available cores.
+        chunk_size: Number of x-index slices dispatched to each worker task.
+            Larger values reduce multiprocessing overhead; smaller values
+            improve load balancing when slice cost varies.
+
+    Returns:
+        A ``TemperatureVolume`` containing the 3-D temperature array of shape
+        ``(nx, ny, nz)``, coordinate arrays in metres, the liquidus temperature,
+        and the ``MeltPoolResult`` from the auto-sizing step.
+
+    Raises:
+        RuntimeError: If domain expansion does not converge within
+            ``_MAX_EXPANSION_ITERS`` iterations.
+
+    Examples:
+        ```python
+        from eagar_tsai import BeamParameters, MaterialProperties, compute_temperature_volume
+
+        beam = BeamParameters(beam_diameter=80e-6, power=250.0, velocity=0.5, absorptivity=0.59)
+        mat = MaterialProperties(liquidus_temperature=3455.0, thermal_conductivity=23.75,
+                                 density=18038.9, specific_heat=251.6)
+        vol = compute_temperature_volume(beam, mat, workers=-1)
+        vol.export_vti("temperature_volume.vti")
+        vol.plot_3d()
+        ```
+    """
+    result = compute_single_point(beam, material, domain, full_field=False)
+
+    tf = result.temperature_field
+    xrange = tf.x_range_m
+    yrange = tf.y_range_m
+    zrange = tf.z_range_m
+
+    alpha = material.thermal_diffusivity
+    sigma = beam.sigma
+    velocity = beam.velocity
+    thermal_ratio = alpha / (velocity * sigma)
+    temp_scale = (beam.absorptivity * beam.power) / (
+        np.pi * (material.thermal_conductivity / alpha) * np.sqrt(np.pi * alpha * velocity * (sigma**3))
+    )
+    z_scale = np.sqrt((alpha * sigma) / velocity)
+
+    nx = xrange.size
+    x_starts = list(range(0, nx, chunk_size))
+    x_ends = [min(s + chunk_size, nx) for s in x_starts]
+    slice_args = [
+        (s, e, xrange, yrange, zrange, sigma, z_scale, thermal_ratio, temp_scale) for s, e in zip(x_starts, x_ends, strict=True)
+    ]
+
+    if workers is None or workers == 1:
+        slices = [_compute_volume_x_slice(a) for a in slice_args]
+    else:
+        max_workers = None if workers == -1 else workers
+        with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
+            slices = list(executor.map(_compute_volume_x_slice, slice_args))
+
+    T_xyz = np.concatenate(slices, axis=0)  # (nx, ny, nz)
+
+    return TemperatureVolume(
+        T_xyz=T_xyz,
+        x_range_m=xrange,
+        y_range_m=yrange,
+        z_range_m=zrange,
+        liquidus_temperature_k=material.liquidus_temperature,
+        result=result,
     )

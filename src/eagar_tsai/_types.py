@@ -7,8 +7,11 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     import matplotlib.figure
     import numpy as np
+    import pyvista
 
 __all__ = [
     "BeamParameters",
@@ -17,6 +20,7 @@ __all__ = [
     "SimulationDomain",
     "MeltPoolResult",
     "TemperatureField",
+    "TemperatureVolume",
 ]
 
 _T0_K: float = 298.0
@@ -259,9 +263,6 @@ class TemperatureField:
 
         Returns:
             A ``matplotlib.figure.Figure``.
-
-        Raises:
-            ImportError: If matplotlib is not installed.
         """
         from eagar_tsai.plot import _render_temperature_panels
 
@@ -319,8 +320,110 @@ class MeltPoolResult:
 
         Returns:
             A ``matplotlib.figure.Figure``.
-
-        Raises:
-            ImportError: If matplotlib is not installed.
         """
         return self.temperature_field.plot(output=output, annotate=annotate)
+
+
+@dataclass(eq=False)
+class TemperatureVolume:
+    """Full 3-D temperature volume associated with a melt pool computation.
+
+    ``T_xyz`` has shape ``(nx, ny, nz)`` in Kelvin. ``y_range_m`` covers only
+    the half-domain (y ≥ 0) by symmetry; use ``mirror_y=True`` in
+    ``export_vti`` and ``plot_3d`` to reconstruct the full symmetric melt pool.
+
+    Attributes:
+        T_xyz: 3-D temperature array of shape ``(nx, ny, nz)``, in Kelvin.
+        x_range_m: 1-D x-coordinate array in metres (scan direction).
+        y_range_m: 1-D y-coordinate array in metres (half-domain, y ≥ 0).
+        z_range_m: 1-D z-coordinate array in metres (negative = depth below surface).
+        liquidus_temperature_k: Liquidus temperature in Kelvin.
+        result: Melt pool summary from the 2-D auto-sizing computation.
+    """
+
+    T_xyz: np.ndarray = field(repr=False)
+    x_range_m: np.ndarray = field(repr=False)
+    y_range_m: np.ndarray = field(repr=False)
+    z_range_m: np.ndarray = field(repr=False)
+    liquidus_temperature_k: float
+    result: MeltPoolResult
+
+    @property
+    def x_range_um(self) -> np.ndarray:
+        """x-coordinate array in micrometres."""
+        return self.x_range_m / _UM_TO_M
+
+    @property
+    def y_range_um(self) -> np.ndarray:
+        """y-coordinate array in micrometres."""
+        return self.y_range_m / _UM_TO_M
+
+    @property
+    def z_range_um(self) -> np.ndarray:
+        """z-coordinate array in micrometres (negative = depth below surface)."""
+        return self.z_range_m / _UM_TO_M
+
+    def export_vti(
+        self,
+        path: str | Path,
+        *,
+        mirror_y: bool = True,
+    ) -> Path:
+        """Export the 3-D temperature volume as a VTK ImageData (.vti) file.
+
+        Args:
+            path: Output file path (e.g. ``"temperature_volume.vti"``).
+            mirror_y: When ``True`` (default), mirror the y-axis to produce
+                the full symmetric melt pool before export.
+
+        Returns:
+            The resolved absolute path to the written file.
+        """
+        from eagar_tsai.plot import _export_vti
+
+        return _export_vti(self, path, mirror_y=mirror_y)
+
+    def plot_3d(
+        self,
+        *,
+        mirror_y: bool = True,
+        liquidus_contour: bool = True,
+        off_screen: bool = False,
+        output: str | Path | None = None,
+        return_plotter: bool = False,
+        show_scalar_bar: bool = True,
+    ) -> matplotlib.figure.Figure | pyvista.Plotter:
+        """Render the 3-D temperature volume using PyVista.
+
+        Args:
+            mirror_y: When ``True`` (default), mirror the y-axis to show the
+                full symmetric melt pool.
+            liquidus_contour: When ``True`` (default), overlay the liquidus
+                isotherm as a contour surface.
+            off_screen: When ``True``, render off-screen.
+            output: File path to save the rendered image (e.g. ``"volume.png"``).
+                PDF, SVG, and EPS paths use PyVista's ``save_graphic`` when
+                ``return_plotter=True``; all other extensions are saved as a
+                raster screenshot or via ``fig.savefig`` in matplotlib mode.
+            return_plotter: When ``True``, return the interactive
+                ``pyvista.Plotter`` directly. When ``False`` (default), render
+                off-screen and return a ``matplotlib.figure.Figure`` containing
+                the captured image.
+            show_scalar_bar: When ``True`` (default), show the PyVista scalar
+                bar (only has effect when ``return_plotter=True``).
+
+        Returns:
+            A ``matplotlib.figure.Figure`` when ``return_plotter=False``, or the
+            ``pyvista.Plotter`` instance when ``return_plotter=True``.
+        """
+        from eagar_tsai.plot import _render_temperature_volume
+
+        return _render_temperature_volume(
+            self,
+            mirror_y=mirror_y,
+            liquidus_contour=liquidus_contour,
+            off_screen=off_screen,
+            output=output,
+            return_plotter=return_plotter,
+            show_scalar_bar=show_scalar_bar,
+        )
