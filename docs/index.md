@@ -27,7 +27,7 @@
 
 The model computes temperature fields produced by a Gaussian laser beam moving over a semi-infinite solid. Melt pool dimensions are extracted from the liquidus isotherm.
 
-**Reference:** T. W. Eagar and N.-S. Tsai, "Temperature Fields Produced by Traveling Distributed Heat Sources," *Welding Journal (Research Supplement)*, December 1983, pp. 346-s–354-s.
+**Reference:** T. W. Eagar and N.-S. Tsai, "Temperature Fields Produced by Traveling Distributed Heat Sources," *Welding Journal (Research Supplement)*, December 1983, pp. 346-s–354-s.
 
 **Integrand reformulation:** Sasha Rubenchik, LLNL, 2015.
 
@@ -41,6 +41,7 @@ The model computes temperature fields produced by a Gaussian laser beam moving o
 - **Immutable dataclasses** for beam, material, and domain parameters
 - **Iterative domain expansion** — automatically enlarges the simulation grid if the melt pool touches a boundary
 - **Temperature field access** — `compute_single_point` returns a `MeltPoolResult` that always includes the full 2-D surface and depth temperature planes as an embedded `TemperatureField`; `result.plot()` produces a two-panel heatmap figure
+- **3D temperature volume** — `plot_temperature_field_3d` computes the full volumetric temperature distribution and renders an interactive or off-screen 3-D visualization via PyVista, with an optional liquidus isotherm contour surface and VTI export
 
 ---
 
