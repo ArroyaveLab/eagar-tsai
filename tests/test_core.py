@@ -8,8 +8,8 @@ import numpy as np
 import pytest
 import scipy.integrate
 
-from eagar_tsai import BeamParameters, MaterialProperties, MeltPoolResult, SimulationDomain, TemperatureField
-from eagar_tsai._core import compute_single_point, eagar_tsai_integrand
+from eagar_tsai import BeamParameters, MaterialProperties, MeltPoolResult, SimulationDomain, TemperatureField, TemperatureVolume
+from eagar_tsai._core import compute_single_point, compute_temperature_volume, eagar_tsai_integrand
 
 
 class TestPythonIntegrand:
@@ -233,6 +233,98 @@ class TestComputeSinglePointReturnField:
         tf = compute_single_point(steel_beam, steel_material, tiny_domain).temperature_field
         assert float(tf.T_xy.min()) >= 298.0
         assert float(tf.T_xz.min()) >= 298.0
+
+
+@pytest.mark.slow
+class TestComputeTemperatureVolume:
+    """Integration tests for compute_temperature_volume."""
+
+    def test_returns_temperature_volume(
+        self,
+        steel_beam: BeamParameters,
+        steel_material: MaterialProperties,
+        volume_domain: SimulationDomain,
+    ) -> None:
+        """compute_temperature_volume returns a TemperatureVolume."""
+        vol = compute_temperature_volume(steel_beam, steel_material, volume_domain)
+        assert isinstance(vol, TemperatureVolume)
+
+    def test_array_shape_matches_coordinates(
+        self,
+        steel_beam: BeamParameters,
+        steel_material: MaterialProperties,
+        volume_domain: SimulationDomain,
+    ) -> None:
+        """T_xyz has shape (nx, ny, nz) consistent with coordinate arrays."""
+        vol = compute_temperature_volume(steel_beam, steel_material, volume_domain)
+        nx, ny, nz = vol.T_xyz.shape
+        assert nx == vol.x_range_m.size
+        assert ny == vol.y_range_m.size
+        assert nz == vol.z_range_m.size
+
+    def test_coordinate_arrays_are_1d(
+        self,
+        steel_beam: BeamParameters,
+        steel_material: MaterialProperties,
+        volume_domain: SimulationDomain,
+    ) -> None:
+        """All coordinate arrays are 1-D."""
+        vol = compute_temperature_volume(steel_beam, steel_material, volume_domain)
+        assert vol.x_range_m.ndim == 1
+        assert vol.y_range_m.ndim == 1
+        assert vol.z_range_m.ndim == 1
+
+    def test_um_properties_are_1e6x_metres(
+        self,
+        steel_beam: BeamParameters,
+        steel_material: MaterialProperties,
+        volume_domain: SimulationDomain,
+    ) -> None:
+        """Micrometre coordinate properties are exactly 1e6 times the metre arrays."""
+        vol = compute_temperature_volume(steel_beam, steel_material, volume_domain)
+        np.testing.assert_allclose(vol.x_range_um, vol.x_range_m * 1e6)
+        np.testing.assert_allclose(vol.y_range_um, vol.y_range_m * 1e6)
+        np.testing.assert_allclose(vol.z_range_um, vol.z_range_m * 1e6)
+
+    def test_result_attribute_is_melt_pool_result(
+        self,
+        steel_beam: BeamParameters,
+        steel_material: MaterialProperties,
+        volume_domain: SimulationDomain,
+    ) -> None:
+        """The result attribute is a MeltPoolResult from the auto-sizing step."""
+        vol = compute_temperature_volume(steel_beam, steel_material, volume_domain)
+        assert isinstance(vol.result, MeltPoolResult)
+
+    def test_temperatures_above_ambient(
+        self,
+        steel_beam: BeamParameters,
+        steel_material: MaterialProperties,
+        volume_domain: SimulationDomain,
+    ) -> None:
+        """All computed temperatures are at or above the 298 K ambient."""
+        vol = compute_temperature_volume(steel_beam, steel_material, volume_domain)
+        assert float(vol.T_xyz.min()) >= 298.0
+
+    def test_z_range_is_non_positive(
+        self,
+        steel_beam: BeamParameters,
+        steel_material: MaterialProperties,
+        volume_domain: SimulationDomain,
+    ) -> None:
+        """z_range_m contains only non-positive values (depth below surface)."""
+        vol = compute_temperature_volume(steel_beam, steel_material, volume_domain)
+        assert float(vol.z_range_m.max()) <= 0.0
+
+    def test_y_range_is_non_negative(
+        self,
+        steel_beam: BeamParameters,
+        steel_material: MaterialProperties,
+        volume_domain: SimulationDomain,
+    ) -> None:
+        """y_range_m contains only non-negative values (half-domain symmetry)."""
+        vol = compute_temperature_volume(steel_beam, steel_material, volume_domain)
+        assert float(vol.y_range_m.min()) >= 0.0
 
 
 @pytest.mark.slow

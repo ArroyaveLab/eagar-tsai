@@ -78,6 +78,17 @@ def minimal_temperature_field() -> TemperatureField:
 
 
 @pytest.fixture
+def volume_domain() -> SimulationDomain:
+    """A coarse domain sized to contain the steel melt pool without expansion."""
+    return SimulationDomain(
+        x_length_um=500.0,
+        y_length_um=300.0,
+        z_depth_um=200.0,
+        spatial_resolution_um=20.0,
+    )
+
+
+@pytest.fixture
 def printability_params() -> PrintabilityParameters:
     """Representative printability parameters for 316L stainless steel."""
     return PrintabilityParameters(
