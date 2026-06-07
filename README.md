@@ -13,7 +13,7 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19837225.svg)](https://doi.org/10.5281/zenodo.19837225)
 
-`eagar-tsai` is a Python library implementing the Eagar–Tsai moving heat source model to estimate melt pool dimensions (length, width, depth) for a scanning laser over a semi-infinite solid. Temperature fields are computed via a 1D integral; melt pool dimensions are extracted from the liquidus isotherm. Built-in plotting covers temperature field heatmaps and power-velocity printability maps.
+`eagar-tsai` is a Python library implementing the Eagar–Tsai moving heat source model to estimate melt pool dimensions (length, width, depth) for a scanning laser over a semi-infinite solid. Temperature fields are computed via a 1D integral; melt pool dimensions are extracted from the liquidus isotherm. Built-in plotting covers 2-D temperature field heatmaps, 3-D temperature volume rendering with PyVista, and power-velocity printability maps.
 
 <p>
   <a href="https://github.com/ArroyaveLab/eagar-tsai/issues/new?labels=bug">Report a Bug</a> |
@@ -118,16 +118,17 @@ print(result[["melt_length_um", "melt_width_um", "melt_depth_um"]])
 
 ### Output Columns Added to the DataFrame
 
-| Column             | Unit |
-|--------------------|------|
-| `melt_length`      | m    |
-| `melt_width`       | m    |
-| `melt_depth`       | m    |
-| `melt_length_um`   | µm   |
-| `melt_width_um`    | µm   |
-| `melt_depth_um`    | µm   |
-| `peak_temperature` | K    |
-| `min_temperature`  | K    |
+| Column              | Unit | Notes                                                                            |
+|---------------------|------|----------------------------------------------------------------------------------|
+| `melt_length`       | m    |                                                                                  |
+| `melt_width`        | m    |                                                                                  |
+| `melt_depth`        | m    |                                                                                  |
+| `melt_length_um`    | µm   |                                                                                  |
+| `melt_width_um`     | µm   |                                                                                  |
+| `melt_depth_um`     | µm   |                                                                                  |
+| `peak_temperature`  | K    |                                                                                  |
+| `min_temperature`   | K    |                                                                                  |
+| `temperature_field` | —    | `TemperatureField` object; `None` on failure. Pass `return_field=False` to omit. |
 
 ---
 
@@ -178,6 +179,91 @@ The standalone convenience function skips constructing the `MeltPoolResult` obje
 from eagar_tsai.plot import plot_temperature_field
 
 fig = plot_temperature_field(beam, material, domain, output="temperature_field.png")
+```
+
+---
+
+## 3-D Temperature Volume
+
+`compute_temperature_volume` evaluates the full `(nx, ny, nz)` temperature array on the auto-sized domain and returns a `TemperatureVolume`. The `y` axis covers only the half-domain by symmetry; `mirror_y=True` (the default) reconstructs the full melt pool for rendering and export.
+
+The 3-D computation evaluates the integral at every grid point in the volume. For interactive use, coarser spatial resolution (e.g. `spatial_resolution_um=5.0`) gives a 25× speed-up over the 1 µm default with minimal loss of shape accuracy.
+
+```python
+from eagar_tsai import BeamParameters, MaterialProperties, SimulationDomain
+from eagar_tsai import compute_temperature_volume
+
+beam = BeamParameters(
+    beam_diameter=80e-6,
+    power=250.0,
+    velocity=0.5,
+    absorptivity=0.59,
+)
+
+material = MaterialProperties(
+    liquidus_temperature=3455.0,
+    thermal_conductivity=23.75,
+    density=18038.9,
+    specific_heat=251.6,
+)
+
+domain = SimulationDomain(
+    x_length_um=800.0,
+    y_length_um=400.0,
+    z_depth_um=300.0,
+    spatial_resolution_um=5.0,
+)
+
+volume = compute_temperature_volume(beam, material, domain, workers=-1)
+
+print(volume.T_xyz.shape)              # (nx, ny, nz) in Kelvin
+print(volume.result.length_um)         # melt pool length from the 2-D auto-sizing step
+
+volume.export_vti("temperature_volume.vti")   # export for ParaView / VisIt
+
+fig = volume.plot_3d()                 # returns a matplotlib Figure
+plotter = volume.plot_3d(return_plotter=True)  # interactive PyVista window
+```
+
+The standalone convenience function skips constructing the `TemperatureVolume` object explicitly:
+
+```python
+from eagar_tsai.plot import plot_temperature_field_3d
+
+# Returns a matplotlib Figure by default
+fig = plot_temperature_field_3d(beam, material, domain, workers=-1)
+
+# Save the rendered image and also export a .vti file in one call
+fig = plot_temperature_field_3d(
+    beam, material, domain,
+    workers=-1,
+    output="volume.png",
+    output_vti="volume.vti",
+)
+
+# Open an interactive PyVista window
+plotter = plot_temperature_field_3d(beam, material, domain, workers=-1, return_plotter=True)
+```
+
+To compute 3-D volumes for multiple parameter sets from a DataFrame, use `compute_temperature_volumes`:
+
+```python
+import pandas as pd
+from eagar_tsai import compute_temperature_volumes
+
+df = pd.DataFrame({
+    "velocity_m_s":              [0.5, 1.0],
+    "power_w":                   [200.0, 300.0],
+    "beam_diameter_m":           [100e-6, 100e-6],
+    "absorptivity":              [0.35, 0.35],
+    "liquidus_temperature_k":    [1700.0, 1700.0],
+    "thermal_conductivity_w_mk": [30.0, 30.0],
+    "density_kg_m3":             [7800.0, 7800.0],
+    "specific_heat_j_kgk":       [700.0, 700.0],
+})
+
+volumes = compute_temperature_volumes(df, workers=-1)
+volumes[0].export_vti("row0_volume.vti")
 ```
 
 ---
