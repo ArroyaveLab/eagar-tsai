@@ -9,7 +9,13 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from eagar_tsai import SimulationDomain, compute_melt_pool, compute_printability_map
+from eagar_tsai import (
+    SimulationDomain,
+    TemperatureVolume,
+    compute_melt_pool,
+    compute_printability_map,
+    compute_temperature_volumes,
+)
 from eagar_tsai._api import _REQUIRED_COLUMNS, _classify_defect, _process_chunk
 
 _OUTPUT_COLUMNS = [
@@ -226,6 +232,35 @@ class TestClassifyDefect:
         defect, lof1, lof2, ball1, ball2, kh1 = _classify_defect(200.0, 250.0, 80.0, 40.0, 90.0)
         assert not kh1 and not lof1 and not lof2 and not ball1 and not ball2
         assert defect == "defect_free"
+
+
+@pytest.mark.slow
+class TestComputeTemperatureVolumes:
+    """Integration tests for compute_temperature_volumes."""
+
+    def test_returns_list_length_matches_input(self, volume_domain) -> None:
+        """Returns one TemperatureVolume per input row."""
+        df = pd.DataFrame([_row(), _row(power_w=250.0)])
+        result = compute_temperature_volumes(df, domain=volume_domain, workers=1)
+        assert len(result) == 2
+
+    def test_items_are_temperature_volume(self, volume_domain) -> None:
+        """Every returned item is a TemperatureVolume."""
+        df = pd.DataFrame([_row()])
+        result = compute_temperature_volumes(df, domain=volume_domain, workers=1)
+        assert isinstance(result[0], TemperatureVolume)
+
+    def test_raises_on_non_dataframe(self) -> None:
+        """TypeError if input is not a DataFrame."""
+        with pytest.raises(TypeError, match="pandas DataFrame"):
+            compute_temperature_volumes({"not": "a dataframe"})  # ty: ignore[invalid-argument-type]
+
+    def test_raises_on_missing_column(self) -> None:
+        """ValueError lists the missing column."""
+        df = pd.DataFrame([_row()])
+        df = df.drop(columns=["power_w"])
+        with pytest.raises(ValueError, match="power_w"):
+            compute_temperature_volumes(df)
 
 
 @pytest.mark.slow
