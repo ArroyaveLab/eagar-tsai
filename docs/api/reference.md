@@ -26,6 +26,8 @@
 
 ::: eagar_tsai.plot.plot_temperature_field
 
+::: eagar_tsai.plot.plot_temperature_field_3d
+
 ::: eagar_tsai.plot.plot_printability_map
 
 ## Integrand

@@ -143,6 +143,53 @@ from eagar_tsai.plot import plot_temperature_field
 fig = plot_temperature_field(beam, material, domain, output="temperature_field.png")
 ```
 
+## 3D Temperature Volume Visualization
+
+`plot_temperature_field_3d` computes the full `(nx, ny, nz)` temperature array and renders it as a volumetric visualization using PyVista.
+
+By default the function returns a `matplotlib.Figure` from an off-screen render, making it suitable for saving figures in non-interactive environments. Pass `return_plotter=True` to get the live `pyvista.Plotter` object for interactive exploration.
+
+```python
+from eagar_tsai import BeamParameters, MaterialProperties, SimulationDomain
+from eagar_tsai.plot import plot_temperature_field_3d
+
+beam = BeamParameters(
+    beam_diameter=100e-6,
+    power=200.0,
+    velocity=0.5,
+    absorptivity=0.35,
+)
+
+material = MaterialProperties(
+    liquidus_temperature=1700.0,
+    thermal_conductivity=30.0,
+    density=7800.0,
+    specific_heat=700.0,
+)
+
+domain = SimulationDomain(
+    x_length_um=450.0,
+    y_length_um=180.0,
+    z_depth_um=80.0,
+    spatial_resolution_um=10.0,
+)
+
+# Off-screen render — returns a matplotlib Figure
+fig = plot_temperature_field_3d(beam, material, domain, workers=-1)
+fig.savefig("temperature_volume.png", dpi=300, bbox_inches="tight")
+
+# Interactive window
+plotter = plot_temperature_field_3d(beam, material, domain, workers=-1, return_plotter=True)
+plotter.show()
+```
+
+The `mirror_y` option (default `True`) reflects the half-domain computation to display the full symmetric melt pool. The `liquidus_contour` option (default `True`) overlays the liquidus isotherm as a contour surface. Passing `output_vti` saves the volume to a `.vti` file for use in ParaView or other VTK-compatible tools.
+
+<figure markdown="span" style="width: 100%; display: block; text-align: center;">
+    ![3D temperature volume render showing the full melt pool for 316L stainless steel at 200 W, 0.5 m/s](img/temperature_volume.png){ width="400" }
+    <figcaption style="display: block; width: 100%; max-width: 100%;">3D temperature volume for 316L stainless steel (T<sub>liq</sub> = 1700 K, k = 30 W/(m·K), ρ = 7800 kg/m³, c<sub>p</sub> = 700 J/(kg·K)). Beam conditions: P = 200 W, v = 0.5 m/s, d = 100 µm, A = 0.35. The liquidus isotherm contour marks the melt pool boundary.</figcaption>
+</figure>
+
 ## Printability Maps
 
 `compute_printability_map` sweeps laser power and scan speed over a regular grid, runs the Eagar–Tsai model at every grid point, and classifies each point into one of four defect regimes (keyhole porosity, lack of fusion, balling, or defect-free).
