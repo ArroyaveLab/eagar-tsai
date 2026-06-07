@@ -24,8 +24,8 @@ December 1983.
 Reformulation: Sasha Rubenchik, LLNL, 2015.
 """
 
-from ._api import compute_melt_pool, compute_printability_map
-from ._core import compute_single_point
+from ._api import compute_melt_pool, compute_printability_map, compute_temperature_volumes
+from ._core import compute_single_point, compute_temperature_volume
 from ._types import (
     BeamParameters,
     MaterialProperties,
@@ -33,8 +33,9 @@ from ._types import (
     PrintabilityParameters,
     SimulationDomain,
     TemperatureField,
+    TemperatureVolume,
 )
-from .plot import plot_printability_map, plot_temperature_field
+from .plot import plot_printability_map, plot_temperature_field, plot_temperature_field_3d
 
 __version__ = "0.3.1"
 __all__ = [
@@ -44,9 +45,13 @@ __all__ = [
     "PrintabilityParameters",
     "SimulationDomain",
     "TemperatureField",
+    "TemperatureVolume",
     "compute_melt_pool",
     "compute_printability_map",
     "compute_single_point",
+    "compute_temperature_volume",
+    "compute_temperature_volumes",
     "plot_printability_map",
     "plot_temperature_field",
+    "plot_temperature_field_3d",
 ]
