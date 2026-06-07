@@ -78,6 +78,15 @@ $$
 !!! note "Singularity at $t = 0$"
     The $1/\sqrt{t}$ factor produces an integrable singularity at $t = 0$. SciPy's `quad` (adaptive QUADPACK) handles this automatically without any regularization. For performance, the integrand is implemented as a C extension (`_integrand_ext.c`) and passed to QUADPACK as a `LowLevelCallable`, eliminating Python overhead on every function evaluation.
 
+### C extension performance
+
+The compiled integrand is roughly an order of magnitude faster than the pure-Python fallback. The figure below shows median wall-clock time across repeated runs for both modes as the number of conditions grows.
+
+<figure markdown="span" style="width: 100%; display: block; text-align: center;">
+    ![Benchmark comparing C integrand and Python fallback runtime as a function of number of conditions](img/benchmark.png){ width="400" }
+    <figcaption style="display: block; width: 100%; max-width: 100%;">Runtime comparison between the compiled C integrand and the pure-Python fallback for serial single-worker execution. Shaded bands show the min–max range over repeated runs. Conditions: 316L stainless steel, P = 150–350 W, v = 0.30–1.20 m/s.</figcaption>
+</figure>
+
 ---
 
 ## Melt Pool Extraction
