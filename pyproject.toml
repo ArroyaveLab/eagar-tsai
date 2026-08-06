@@ -71,6 +71,7 @@ ignore = [
     "PLR0912", # Too many branches
     "PLR0913", # Too many arguments in function definition
     "PLR0915", # Too many statements
+    "PLR0917", # Too many positional arguments
     "PLR2004", # magic value assigned to variable in function
     "N806", # variable in function should be lowercase
 ]
