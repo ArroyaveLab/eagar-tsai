@@ -531,7 +531,7 @@ def _render_temperature_volume(
     cbar.ax.xaxis.set_ticks_position("bottom")
     cbar.ax.xaxis.set_label_position("bottom")
     cbar.set_label("T (K)", fontsize=8, labelpad=4.0)
-    cbar.outline.set_linewidth(0.4)  # ty: ignore[call-non-callable]
+    cbar.outline.set_linewidth(0.4)
 
     if output is not None:
         fig.savefig(str(output), bbox_inches="tight")
