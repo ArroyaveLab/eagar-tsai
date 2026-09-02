@@ -35,7 +35,6 @@ from ._types import (
     TemperatureField,
     TemperatureVolume,
 )
-from .plot import plot_printability_map, plot_temperature_field, plot_temperature_field_3d
 
 __version__ = "0.4.2"
 __all__ = [
@@ -55,3 +54,19 @@ __all__ = [
     "plot_temperature_field",
     "plot_temperature_field_3d",
 ]
+
+
+def __getattr__(name: str) -> object:
+    """Lazily import ``plot.py`` so ``matplotlib``/``pyvista`` are only pulled in on demand."""
+    if name not in ("plot_printability_map", "plot_temperature_field", "plot_temperature_field_3d"):
+        msg = f"module {__name__!r} has no attribute {name!r}"
+        raise AttributeError(msg)
+
+    from . import plot
+
+    return getattr(plot, name)
+
+
+def __dir__() -> list[str]:
+    """Include lazily-loaded plotting attributes in ``dir(eagar_tsai)``."""
+    return sorted(__all__)
