@@ -335,10 +335,8 @@ name = "eagar-tsai"
 version = "0.4.2"
 source = { editable = "." }
 dependencies = [
-    { name = "matplotlib" },
     { name = "numpy" },
     { name = "pandas" },
-    { name = "pyvista" },
     { name = "scipy" },
 ]
 
@@ -354,10 +352,14 @@ docs = [
     { name = "mkdocs-material" },
     { name = "mkdocstrings", extra = ["python"] },
 ]
+plot = [
+    { name = "matplotlib" },
+    { name = "pyvista" },
+]
 
 [package.metadata]
 requires-dist = [
-    { name = "matplotlib", specifier = ">=3.7" },
+    { name = "matplotlib", marker = "extra == 'plot'", specifier = ">=3.7" },
     { name = "mkdocs-material", marker = "extra == 'docs'", specifier = ">=9.5" },
     { name = "mkdocstrings", extras = ["python"], marker = "extra == 'docs'", specifier = ">=0.27" },
     { name = "numpy", specifier = ">=1.26" },
@@ -365,12 +367,12 @@ requires-dist = [
     { name = "prek", marker = "extra == 'dev'", specifier = ">=0.4" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5.0" },
-    { name = "pyvista", specifier = ">=0.40" },
+    { name = "pyvista", marker = "extra == 'plot'", specifier = ">=0.40" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.15" },
     { name = "scipy", specifier = ">=1.11" },
     { name = "ty", marker = "extra == 'dev'", specifier = ">=0.0.1a6" },
 ]
-provides-extras = ["dev", "docs"]
+provides-extras = ["plot", "dev", "docs"]
 
 [[package]]
 name = "fonttools"

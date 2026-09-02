@@ -14,16 +14,21 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
-import matplotlib as mpl
-import matplotlib.figure
-import matplotlib.pyplot as plt
 import numpy as np
-import pyvista as pv
-from matplotlib.colors import Normalize
-from matplotlib.patches import Patch
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from ._types import _T0_K
+
+try:
+    import matplotlib as mpl
+    import matplotlib.figure
+    import matplotlib.pyplot as plt
+    import pyvista as pv
+    from matplotlib.colors import Normalize
+    from matplotlib.patches import Patch
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+except ImportError as exc:
+    msg = "Plotting requires the 'plot' extra, e.g. pip install 'eagar-tsai[plot]'"
+    raise ImportError(msg) from exc
 
 _logger = logging.getLogger(__name__)
 
