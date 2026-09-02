@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
 from ._core import compute_single_point, compute_temperature_volume
 from ._types import BeamParameters, MaterialProperties, PrintabilityParameters, SimulationDomain
@@ -153,6 +154,7 @@ def compute_melt_pool(
     workers: int | None = None,
     output_dir: Path | str | None = None,
     return_field: bool = True,
+    show_progress: bool = True,
 ) -> pd.DataFrame:
     """Compute melt pool dimensions for every row in a DataFrame.
 
@@ -169,6 +171,7 @@ def compute_melt_pool(
         output_dir: If provided, each processed chunk is saved as a CSV file under this directory before results are concatenated.
         return_field: When ``True``, a ``temperature_field`` column is added to the output DataFrame containing
             the ``TemperatureField`` for each row (``None`` for rows that failed).
+        show_progress: When ``True`` (default), display a tqdm progress bar over chunks.
 
     Returns:
         A new DataFrame identical to ``data`` plus the output columns:
@@ -213,12 +216,20 @@ def compute_melt_pool(
 
     if workers is None or workers == 1:
         _logger.info("Running serially (%d chunk(s)).", len(chunks))
-        results = [_process_chunk(p) for p in params]
+        results = [_process_chunk(p) for p in tqdm(params, desc="Melt pool", unit="chunk", disable=not show_progress)]
     else:
         max_workers = None if workers == -1 else workers
         _logger.info("Running with %s worker(s), %d chunk(s).", "all" if workers == -1 else workers, len(chunks))
         with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
-            results = list(executor.map(_process_chunk, params))
+            results = list(
+                tqdm(
+                    executor.map(_process_chunk, params),
+                    total=len(params),
+                    desc="Melt pool",
+                    unit="chunk",
+                    disable=not show_progress,
+                )
+            )
 
     return pd.concat(results, ignore_index=True)
 
@@ -303,6 +314,7 @@ def compute_printability_map(
     keyhole_wdr_threshold: float = 2.5,
     domain: SimulationDomain | None = None,
     workers: int | None = None,
+    show_progress: bool = True,
 ) -> pd.DataFrame:
     """Compute a printability map over a laser power * scan speed grid.
 
@@ -330,6 +342,7 @@ def compute_printability_map(
             runs serially; ``-1`` uses all available cores. Each grid point is
             dispatched as an independent task, so workers stay fully utilized
             even when isolated points require iterative domain expansion.
+        show_progress: When ``True`` (default), display a tqdm progress bar over grid points.
 
     Returns:
         A DataFrame with one row per grid point containing:
@@ -387,11 +400,22 @@ def compute_printability_map(
     ]
 
     if workers is None or workers == 1:
-        melt_results = [_compute_printability_point(a) for a in job_args]
+        melt_results = [
+            _compute_printability_point(a)
+            for a in tqdm(job_args, desc="Printability map", unit="point", disable=not show_progress)
+        ]
     else:
         max_workers = None if workers == -1 else workers
         with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
-            melt_results = list(executor.map(_compute_printability_point, job_args))
+            melt_results = list(
+                tqdm(
+                    executor.map(_compute_printability_point, job_args),
+                    total=len(job_args),
+                    desc="Printability map",
+                    unit="point",
+                    disable=not show_progress,
+                )
+            )
 
     lengths_um = [r[0] for r in melt_results]
     widths_um = [r[1] for r in melt_results]
@@ -463,6 +487,7 @@ def compute_temperature_volumes(
     domain: SimulationDomain | None = None,
     workers: int | None = None,
     chunk_size: int = 10,
+    show_progress: bool = True,
 ) -> list[TemperatureVolume | None]:
     """Compute the full 3-D temperature volume for every row in a DataFrame.
 
@@ -480,6 +505,7 @@ def compute_temperature_volumes(
             use ``workers=-1`` when processing many parameter sets.
         chunk_size: Number of x-index slices per internal task for each
             row's 3-D computation.
+        show_progress: When ``True`` (default), display a tqdm progress bar over rows.
 
     Returns:
         A list of ``TemperatureVolume`` objects, one per row of ``data``,
@@ -515,8 +541,16 @@ def compute_temperature_volumes(
     row_args = [(row, domain, chunk_size) for _, row in data.iterrows()]
 
     if workers is None or workers == 1:
-        return [_process_volume_row(a) for a in row_args]
+        return [_process_volume_row(a) for a in tqdm(row_args, desc="Temperature volumes", unit="row", disable=not show_progress)]
 
     max_workers = None if workers == -1 else workers
     with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
-        return list(executor.map(_process_volume_row, row_args))
+        return list(
+            tqdm(
+                executor.map(_process_volume_row, row_args),
+                total=len(row_args),
+                desc="Temperature volumes",
+                unit="row",
+                disable=not show_progress,
+            )
+        )

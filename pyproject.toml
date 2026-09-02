@@ -15,6 +15,7 @@ dependencies = [
     "scipy>=1.11",
     "matplotlib>=3.7",
     "pyvista>=0.40",
+    "tqdm>=4.65",
 ]
 
 [project.optional-dependencies]
