@@ -35,7 +35,7 @@ result.to_csv("melt_pool_results.csv", index=False)
 | `velocity_m_s`              | m/s      | Scan velocity                    |
 | `power_w`                   | W        | Laser power                      |
 | `beam_diameter_m`           | m        | Beam diameter (2σ)               |
-| `absorptivity`              | —        | Absorptivity (0, 1]              |
+| `absorptivity`              | -        | Absorptivity (0, 1]              |
 | `liquidus_temperature_k`    | K        | Liquidus temperature             |
 | `thermal_conductivity_w_mk` | W/(m·K)  | Thermal conductivity at liquidus |
 | `density_kg_m3`             | kg/m³    | Density                          |
@@ -67,7 +67,7 @@ beam = BeamParameters(
     beam_diameter=100e-6,         # m
     power=200.0,                  # W
     velocity=0.5,                 # m/s
-    absorptivity=0.35,            # —
+    absorptivity=0.35,            # -
 )
 
 material = MaterialProperties(
@@ -125,8 +125,8 @@ domain = SimulationDomain(
 result = compute_single_point(beam, material, domain)
 
 # Access raw arrays via the embedded TemperatureField
-print(result.temperature_field.T_xy.shape)   # (ny, nx) — surface plane in Kelvin
-print(result.temperature_field.T_xz.shape)   # (nz, nx) — depth cross-section in Kelvin
+print(result.temperature_field.T_xy.shape)   # (ny, nx): surface plane in Kelvin
+print(result.temperature_field.T_xz.shape)   # (nz, nx): depth cross-section in Kelvin
 
 # Render a two-panel figure (x-y surface heatmap + x-z depth heatmap)
 fig = result.plot(output="temperature_field.png")
@@ -177,7 +177,7 @@ domain = SimulationDomain(
     spatial_resolution_um=10.0,
 )
 
-# Off-screen render — returns a matplotlib Figure
+# Off-screen render: returns a matplotlib Figure
 fig = plot_temperature_field_3d(beam, material, domain, workers=-1)
 fig.savefig("temperature_volume.png", dpi=300, bbox_inches="tight")
 
