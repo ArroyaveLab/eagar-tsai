@@ -39,9 +39,9 @@ The model computes temperature fields produced by a Gaussian laser beam moving o
 - **Batch DataFrame API** with optional multiprocessing parallelism
 - **Printability maps**: sweep laser power x scan speed and classify every grid point into keyhole, lack of fusion, balling, or defect-free; each point is an independent parallel task for full CPU utilization
 - **Immutable dataclasses** for beam, material, and domain parameters
-- **Iterative domain expansion** — automatically enlarges the simulation grid if the melt pool touches a boundary
-- **Temperature field access** — `compute_single_point` returns a `MeltPoolResult` that always includes the full 2-D surface and depth temperature planes as an embedded `TemperatureField`; `result.plot()` produces a two-panel heatmap figure
-- **3D temperature volume** — `plot_temperature_field_3d` computes the full volumetric temperature distribution and renders an interactive or off-screen 3-D visualization via PyVista, with an optional liquidus isotherm contour surface and VTI export
+- **Iterative domain expansion**: automatically enlarges the simulation grid if the melt pool touches a boundary
+- **Temperature field access**: `compute_single_point` returns a `MeltPoolResult` that always includes the full 2-D surface and depth temperature planes as an embedded `TemperatureField`; `result.plot()` produces a two-panel heatmap figure
+- **3D temperature volume**: `plot_temperature_field_3d` computes the full volumetric temperature distribution and renders an interactive or off-screen 3-D visualization via PyVista, with an optional liquidus isotherm contour surface and VTI export
 
 ---
 

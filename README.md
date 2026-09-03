@@ -30,10 +30,10 @@
 Pre-built binary wheels are published to PyPI for Python 3.12, 3.13, and 3.14 on Linux (x86-64, i686), macOS (x86-64 and Apple Silicon), and Windows (AMD64). If a matching wheel exists for your platform, no C compiler is needed.
 
 ```sh
-# Recommended — using uv
+# Recommended: uv
 uv add eagar-tsai
 
-# Alternative — using pip
+# Alternative: pip
 pip install eagar-tsai
 ```
 
@@ -120,7 +120,7 @@ print(result[["melt_length_um", "melt_width_um", "melt_depth_um"]])
 | `velocity_m_s`              | m/s      | Scan velocity                    |
 | `power_w`                   | W        | Laser power                      |
 | `beam_diameter_m`           | m        | Beam diameter (2σ)               |
-| `absorptivity`              | —        | Absorptivity (0, 1]              |
+| `absorptivity`              | -        | Absorptivity (0, 1]              |
 | `liquidus_temperature_k`    | K        | Liquidus temperature             |
 | `thermal_conductivity_w_mk` | W/(m·K)  | Thermal conductivity at liquidus |
 | `density_kg_m3`             | kg/m³    | Density                          |
@@ -138,7 +138,7 @@ print(result[["melt_length_um", "melt_width_um", "melt_depth_um"]])
 | `melt_depth_um`     | µm   |                                                                                  |
 | `peak_temperature`  | K    |                                                                                  |
 | `min_temperature`   | K    |                                                                                  |
-| `temperature_field` | —    | `TemperatureField` object; `None` on failure. Pass `return_field=False` to omit. |
+| `temperature_field` | -    | `TemperatureField` object; `None` on failure. Pass `return_field=False` to omit. |
 
 ---
 
@@ -180,8 +180,8 @@ result = compute_single_point(
 )
 
 print(result.length_um)                        # melt pool length in µm
-print(result.temperature_field.T_xy.shape)     # (ny, nx) — surface plane in Kelvin
-print(result.temperature_field.T_xz.shape)     # (nz, nx) — depth cross-section in Kelvin
+print(result.temperature_field.T_xy.shape)     # (ny, nx): surface plane in Kelvin
+print(result.temperature_field.T_xz.shape)     # (nz, nx): depth cross-section in Kelvin
 
 fig = result.plot(output="temperature_field.png") # equivalently: result.temperature_field.plot(output="temperature_field.png")
 ```
