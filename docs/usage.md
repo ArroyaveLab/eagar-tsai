@@ -93,6 +93,9 @@ print(f"Depth:  {result.depth_um:.1f} µm")
 
 ## Temperature Field Visualization
 
+!!! note "Optional dependency"
+    This section and the 3-D volume and printability map sections below require the `plot` extra: `pip install "eagar-tsai[plot]"`. See [Installation](installation.md#optional-plotting-dependencies).
+
 `compute_single_point` returns a `MeltPoolResult` that always includes a `TemperatureField` with direct access to the raw arrays and a built-in plot method.
 
 ```python

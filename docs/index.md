@@ -49,13 +49,19 @@ The model computes temperature fields produced by a Gaussian laser beam moving o
 
 Install `eagar-tsai` with `uv` or `pip`. The C extension is compiled automatically during installation; no separate build step is needed.
 
-```bash
-# Recommended — using uv
-uv add eagar-tsai
+=== "uv (recommended)"
 
-# Alternative — using pip
-pip install eagar-tsai
-```
+    ```bash
+    uv add eagar-tsai
+    ```
+
+=== "pip"
+
+    ```bash
+    pip install eagar-tsai
+    ```
+
+`matplotlib` and `pyvista` are not installed by default. See [Optional: Plotting Dependencies](installation.md#optional-plotting-dependencies) to use the plotting functions.
 
 ---
 
