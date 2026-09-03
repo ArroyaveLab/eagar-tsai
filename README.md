@@ -40,6 +40,16 @@ pip install eagar-tsai
 > [!NOTE]
 > If no pre-built wheel matches your platform (for example, a non-standard Linux architecture or a Python version outside the supported range), the package falls back to building from source. In that case a C compiler is required: GCC or Clang on Linux/macOS; MSVC Build Tools or MinGW-w64 on Windows.
 
+`matplotlib` and `pyvista` are not installed by default. Add the `plot` extra to use `plot_temperature_field`, `plot_temperature_field_3d`, `plot_printability_map`, or the `.plot()` / `.plot_3d()` methods on results:
+
+```sh
+# Using uv
+uv add "eagar-tsai[plot]"
+
+# Using pip
+pip install "eagar-tsai[plot]"
+```
+
 ---
 
 ## Quick Start
@@ -133,6 +143,9 @@ print(result[["melt_length_um", "melt_width_um", "melt_depth_um"]])
 ---
 
 ## Temperature Field Visualization
+
+> [!NOTE]
+> The plotting features below (this section, 3-D volumes, and printability maps) require the `plot` extra. See [Installation](#installation).
 
 `compute_single_point` returns a `MeltPoolResult` that always includes the full `TemperatureField` and a built-in plot method:
 
