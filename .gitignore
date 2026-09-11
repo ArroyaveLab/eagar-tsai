@@ -152,3 +152,4 @@ dmypy.json
 .pyre/
 .pytype/
 cython_debug/
+paper/jats/
