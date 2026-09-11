@@ -30,7 +30,7 @@ affiliations:
   - index: 3
     name: "Wm Michael Barnes '64 Department of Industrial and Systems Engineering, Texas A&M University, USA"
     ror: 01f5ytq51
-date: 9 September 2026
+date: 11 September 2026
 bibliography: paper.bib
 ---
 
