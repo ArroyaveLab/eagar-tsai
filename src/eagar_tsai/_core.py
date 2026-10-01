@@ -44,7 +44,7 @@ _logger = logging.getLogger(__name__)
 _MAX_EXPANSION_ITERS: int = 20
 """Maximum number of domain-expansion iterations before giving up."""
 
-"""Default simulation domain (1200 x 1200 x 1000 um, 1 um resolution)."""
+"""Default simulation domain (600 x 300 x 200 um, 1 um resolution)."""
 
 
 def eagar_tsai_integrand(t: float, x: float, y: float, z: float, p: float) -> float:
@@ -203,7 +203,7 @@ def compute_single_point(
     Args:
         beam: Laser beam and process parameters.
         material: Material thermal properties.
-        domain: Spatial domain; defaults to 1200 x 1200 x 1000 um, 1 um.
+        domain: Spatial domain; defaults to 600 x 300 x 200 um, 1 um.
         full_field: When ``True`` (default), T_xy and T_xz are computed for
             every grid point and stored in the returned ``TemperatureField``.
             When ``False``, T_xz is computed only at the x-indices that fall

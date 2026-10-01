@@ -1,4 +1,4 @@
-"""Frozen dataclasses for Eagar–Tsai model parameters and results."""
+"""Frozen dataclasses for Eagar-Tsai model parameters and results."""
 
 from __future__ import annotations
 
@@ -152,9 +152,9 @@ class SimulationDomain:
         spatial_resolution_um: Grid spacing in um.
     """
 
-    x_length_um: float = 1200.0
-    y_length_um: float = 1200.0
-    z_depth_um: float = 1000.0
+    x_length_um: float = 600.0
+    y_length_um: float = 300.0
+    z_depth_um: float = 200.0
     spatial_resolution_um: float = 1.0
 
     def __post_init__(self) -> None:

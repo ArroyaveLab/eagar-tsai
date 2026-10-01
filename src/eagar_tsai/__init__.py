@@ -1,4 +1,4 @@
-"""Eagar–Tsai moving heat source model for melt pool dimension estimation.
+"""Eagar-Tsai moving heat source model for melt pool dimension estimation.
 
 Quick-start example::
 

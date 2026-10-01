@@ -164,7 +164,7 @@ def compute_melt_pool(
 
     Args:
         data: Input DataFrame.  Must contain the columns listed in _REQUIRED_COLUMNS.
-        domain: Custom simulation domain.  If None, the default 1200 x 1200 x 1000 um domain is used for every row.
+        domain: Custom simulation domain.  If None, the default 600 x 300 x 200 um, 1 um domain is used for every row.
         chunk_size: Number of rows per chunk.  Larger values reduce multiprocessing overhead at the cost of coarser progress.
             Defaults to 50.
         workers: Worker processes to use.  ``1`` or ``None`` runs serially; ``-1`` uses all available cores.
@@ -334,7 +334,7 @@ def compute_printability_map(
         n_velocity: Number of velocity grid points. Defaults to ``50``.
         keyhole_wdr_threshold: Width-to-depth ratio threshold for KH1 keyhole
             criterion. Defaults to ``2.5``.
-        domain: Simulation domain. Defaults to ``SimulationDomain(1200, 1200, 1000, 5)``
+        domain: Simulation domain. Defaults to ``SimulationDomain(600, 300, 200, 5)``
             (5 µm resolution), which is ~25x faster than the 1 µm default used
             by ``compute_melt_pool`` with negligible classification accuracy loss.
             Pass an explicit domain to override.
@@ -378,9 +378,9 @@ def compute_printability_map(
         domain
         if domain is not None
         else SimulationDomain(
-            x_length_um=1200.0,
-            y_length_um=1200.0,
-            z_depth_um=1000.0,
+            x_length_um=600.0,
+            y_length_um=300.0,
+            z_depth_um=200.0,
             spatial_resolution_um=5.0,
         )
     )

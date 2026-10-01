@@ -112,6 +112,11 @@ class TestSimulationDomain:
         assert math.isclose(d.z_depth, 500e-6, rel_tol=1e-12)
         assert math.isclose(d.spatial_resolution, 2e-6, rel_tol=1e-12)
 
+    def test_defaults(self) -> None:
+        """Default domain is 600 x 300 x 200 um at 1 um resolution."""
+        d = SimulationDomain()
+        assert (d.x_length_um, d.y_length_um, d.z_depth_um, d.spatial_resolution_um) == (600.0, 300.0, 200.0, 1.0)
+
     def test_expanded_returns_new_instance(self) -> None:
         """expanded() returns a new object without mutating the original."""
         d = SimulationDomain(x_length_um=1000.0, y_length_um=1000.0, z_depth_um=800.0)

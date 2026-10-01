@@ -97,7 +97,7 @@ def plot_temperature_field(
     Args:
         beam: Laser beam and process parameters.
         material: Material thermal properties.
-        domain: Spatial domain. Defaults to ``SimulationDomain(1200, 1200, 1000, 1)`` um.
+        domain: Spatial domain. Defaults to ``SimulationDomain(600, 300, 200, 1)`` um.
         output: File path to save the figure (e.g. ``"field.png"``). Supports
             any format recognized by ``matplotlib.figure.Figure.savefig``.
             When ``None`` the figure is returned without saving.
@@ -267,7 +267,7 @@ def plot_printability_map(
         keyhole_wdr_threshold: Width-to-depth ratio threshold for the KH1 keyhole
             criterion. Defaults to ``2.5``.
         domain: Simulation domain. For large grids a coarser domain
-            (e.g. ``SimulationDomain(1200, 1200, 1000, 5)``) reduces compute time.
+            (e.g. ``SimulationDomain(600, 300, 200, 5)``) reduces compute time.
         workers: Worker processes for parallel computation. ``None`` or ``1``
             runs serially; ``-1`` uses all available cores.
         output: File path to save the figure. When ``None`` the figure is returned

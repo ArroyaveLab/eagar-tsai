@@ -13,7 +13,7 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19837225.svg)](https://doi.org/10.5281/zenodo.19837225)
 
-`eagar-tsai` is a Python library implementing the Eagar–Tsai moving heat source model to estimate melt pool dimensions (length, width, depth) for a scanning laser over a semi-infinite solid. Temperature fields are computed via a 1D integral; melt pool dimensions are extracted from the liquidus isotherm. Built-in plotting covers 2-D temperature field heatmaps, 3-D temperature volume rendering with PyVista, and power-velocity printability maps.
+`eagar-tsai` is a Python library implementing the Eagar-Tsai moving heat source model to estimate melt pool dimensions (length, width, depth) for a scanning laser over a semi-infinite solid. Temperature fields are computed via a 1D integral; melt pool dimensions are extracted from the liquidus isotherm. Built-in plotting covers 2-D temperature field heatmaps, 3-D temperature volume rendering with PyVista, and power-velocity printability maps.
 
 <p>
   <a href="https://github.com/ArroyaveLab/eagar-tsai/issues/new?labels=bug">Report a Bug</a> |
@@ -74,9 +74,9 @@ material = MaterialProperties(
 )
 
 domain = SimulationDomain(
-        x_length_um=1200.0,
-        y_length_um=1200.0,
-        z_depth_um=1000.0,
+        x_length_um=600.0,
+        y_length_um=300.0,
+        z_depth_um=200.0,
         spatial_resolution_um=1.0,
 )
 
@@ -283,7 +283,7 @@ volumes[0].export_vti("row0_volume.vti")
 
 ## Printability Maps
 
-`compute_printability_map` sweeps laser power and scan speed over a regular grid, runs the Eagar–Tsai model at every point, and classifies each point into one of four defect regimes (keyhole porosity, lack of fusion, balling, or defect-free) using the five criteria from Sheikh et al. (2023). Each grid point is dispatched as an independent parallel task, so workers stay fully utilized even when isolated points require iterative domain expansion.
+`compute_printability_map` sweeps laser power and scan speed over a regular grid, runs the Eagar-Tsai model at every point, and classifies each point into one of four defect regimes (keyhole porosity, lack of fusion, balling, or defect-free) using the five criteria from Sheikh et al. (2023). Each grid point is dispatched as an independent parallel task, so workers stay fully utilized even when isolated points require iterative domain expansion.
 
 ```python
 from eagar_tsai import (
@@ -309,9 +309,9 @@ process = PrintabilityParameters(
 )
 
 domain = SimulationDomain(
-    x_length_um=1200.0,
-    y_length_um=1200.0,
-    z_depth_um=1000.0,
+    x_length_um=600.0,
+    y_length_um=300.0,
+    z_depth_um=200.0,
     spatial_resolution_um=5.0,  # coarser grid, ~25x faster than 1 µm
 )
 
