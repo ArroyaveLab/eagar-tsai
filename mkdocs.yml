@@ -1,5 +1,5 @@
 site_name: eagar–tsai
-site_description: Python library for melt pool dimension estimation using the Eagar–Tsai moving heat source model
+site_description: Python library for melt pool dimension estimation using the Eagar-Tsai moving heat source model
 repo_url: https://github.com/ArroyaveLab/eagar-tsai
 repo_name: ArroyaveLab/eagar-tsai
 

@@ -78,9 +78,9 @@ material = MaterialProperties(
 )
 
 domain = SimulationDomain(
-    x_length_um=1200.0,           # µm
-    y_length_um=1200.0,           # µm
-    z_depth_um=1000.0,            # µm
+    x_length_um=600.0,            # µm
+    y_length_um=300.0,            # µm
+    z_depth_um=200.0,             # µm
     spatial_resolution_um=1.0,    # µm
 )
 
@@ -135,7 +135,7 @@ fig = result.plot(output="temperature_field.png")
 
 <figure markdown="span" style="width: 100%; display: block; text-align: center;">
     ![Temperature field showing x-y surface and x-z depth cross-section for 316L stainless steel at 200 W, 0.5 m/s](img/temperature_field.png){ width="500" }
-    <figcaption style="display: block; width: 100%; max-width: 100%;">Temperature field for 316L stainless steel (T<sub>liq</sub> = 1700 K, k = 30 W/(m·K), ρ = 7800 kg/m³, c<sub>p</sub> = 700 J/(kg·K)). Beam conditions: P = 200 W, v = 0.5 m/s, d = 100 µm, A = 0.35. Top panel shows the x–y surface plane (z = 0); bottom panel shows the x–z depth cross-section (y = 0). The liquidus isotherm marks the melt pool boundary.</figcaption>
+    <figcaption style="display: block; width: 100%; max-width: 100%;">Temperature field for 316L stainless steel (T<sub>liq</sub> = 1700 K, k = 30 W/(m·K), ρ = 7800 kg/m³, c<sub>p</sub> = 700 J/(kg·K)). Beam conditions: P = 200 W, v = 0.5 m/s, d = 100 µm, A = 0.35. Top panel shows the x-y surface plane (z = 0); bottom panel shows the x-z depth cross-section (y = 0). The liquidus isotherm marks the melt pool boundary.</figcaption>
 </figure>
 
 The standalone convenience function skips constructing the `MeltPoolResult` object explicitly:
@@ -195,7 +195,7 @@ The `mirror_y` option (default `True`) reflects the half-domain computation to d
 
 ## Printability Maps
 
-`compute_printability_map` sweeps laser power and scan speed over a regular grid, runs the Eagar–Tsai model at every grid point, and classifies each point into one of four defect regimes (keyhole porosity, lack of fusion, balling, or defect-free).
+`compute_printability_map` sweeps laser power and scan speed over a regular grid, runs the Eagar-Tsai model at every grid point, and classifies each point into one of four defect regimes (keyhole porosity, lack of fusion, balling, or defect-free).
 
 !!! note "Parallelism"
     Each grid point is dispatched as an independent task to the worker pool. Workers stay fully utilized even when isolated points require iterative domain expansion.
@@ -226,9 +226,9 @@ process = PrintabilityParameters(
 
 # 5 µm resolution domain, fast per-point computation
 domain = SimulationDomain(
-    x_length_um=1200.0,
-    y_length_um=1200.0,
-    z_depth_um=1000.0,
+    x_length_um=600.0,
+    y_length_um=300.0,
+    z_depth_um=200.0,
     spatial_resolution_um=5.0,
 )
 

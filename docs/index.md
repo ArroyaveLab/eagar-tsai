@@ -12,7 +12,7 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19837225.svg)](https://doi.org/10.5281/zenodo.19837225)
 
-`eagar-tsai` is a Python library implementing the Eagar–Tsai moving heat source model to estimate melt pool dimensions (length, width, depth) for a scanning laser over a semi-infinite solid. Temperature fields are computed via a 1D integral; melt pool dimensions are extracted from the liquidus isotherm. Built-in plotting covers temperature field heatmaps and power–velocity printability maps.
+`eagar-tsai` is a Python library implementing the Eagar-Tsai moving heat source model to estimate melt pool dimensions (length, width, depth) for a scanning laser over a semi-infinite solid. Temperature fields are computed via a 1D integral; melt pool dimensions are extracted from the liquidus isotherm. Built-in plotting covers temperature field heatmaps and power-velocity printability maps.
 
 <p>
   <a href="https://github.com/ArroyaveLab/eagar-tsai/issues/new?labels=bug">Report a Bug</a> |
@@ -87,9 +87,9 @@ material = MaterialProperties(
 )
 
 domain = SimulationDomain(
-        x_length_um=1200.0,
-        y_length_um=1200.0,
-        z_depth_um=1000.0,
+        x_length_um=600.0,
+        y_length_um=300.0,
+        z_depth_um=200.0,
         spatial_resolution_um=1.0
 )
 
