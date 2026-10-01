@@ -35,5 +35,8 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras
 
+      - name: Set up headless display
+        uses: pyvista/setup-headless-display-action@v5.1.0
+
       - name: Run fast tests
         run: uv run pytest tests/ -v
