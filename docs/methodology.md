@@ -2,7 +2,7 @@
 
 ## Background
 
-The Eagar–Tsai model (1983) provides an analytical solution for the steady-state temperature field produced by a Gaussian laser beam moving at constant velocity over a semi-infinite solid. It is widely used in additive manufacturing and laser welding research to estimate melt pool geometry without the cost of full finite-element simulations.
+The Eagar-Tsai model (1983) provides an analytical solution for the steady-state temperature field produced by a Gaussian laser beam moving at constant velocity over a semi-infinite solid. It is widely used in additive manufacturing and laser welding research to estimate melt pool geometry without the cost of full finite-element simulations.
 
 **References:**
 
@@ -80,11 +80,13 @@ $$
 
 ### C extension performance
 
-The compiled integrand is roughly an order of magnitude faster than the pure-Python fallback. The figure below shows median wall-clock time across repeated runs for both modes as the number of conditions grows.
+The compiled integrand is about 17 times faster than the pure-Python fallback. The figure below shows how the runtime of `compute_melt_pool` grows with the number of power-velocity pairs, for the compiled integrand and the pure-Python fallback, each on one core and on 15 cores.
+
+Starting the worker processes costs under a second, so parallel runs only pay off once a batch exceeds roughly 50 conditions. For smaller batches, the serial default (`workers=None`) is faster.
 
 <figure markdown="span" style="width: 100%; display: block; text-align: center;">
-    ![Benchmark comparing C integrand and Python fallback runtime as a function of number of conditions](img/benchmark.png){ width="400" }
-    <figcaption style="display: block; width: 100%; max-width: 100%;">Runtime comparison between the compiled C integrand and the pure-Python fallback for serial single-worker execution. Shaded bands show the min–max range over repeated runs. Conditions: 316L stainless steel, P = 150–350 W, v = 0.30–1.20 m/s.</figcaption>
+    ![Benchmark comparing C integrand and Python fallback runtime as a function of the number of power-velocity pairs](img/benchmark.png){ width="400" }
+    <figcaption style="display: block; width: 100%; max-width: 100%;">Runtime of batches of 10 to 1000 power-velocity pairs for the compiled C integrand and the pure-Python fallback, each on one core and on 15 cores. Lines show the median and shaded bands the min-max range over three runs; parallel timings include process start-up. Conditions: 316L stainless steel, P = 150–350 W, v = 0.30–1.20 m/s, d = 100 µm, A = 0.35, on a 5 µm grid with a 360 × 180 × 120 µm starting domain.</figcaption>
 </figure>
 
 ---
@@ -93,8 +95,8 @@ The compiled integrand is roughly an order of magnitude faster than the pure-Pyt
 
 The temperature field is evaluated on two planes:
 
-- the **x–y plane** (z = 0, top surface) to get melt pool length and half-width,
-- the **x–z plane** (y = 0, centerline) to get melt pool depth.
+- the **x-y plane** (z = 0, top surface) to get melt pool length and half-width,
+- the **x-z plane** (y = 0, centerline) to get melt pool depth.
 
 The melt pool boundary is the liquidus isotherm $T = T_\mathrm{liq}$. The three dimensions are extracted as:
 
@@ -106,9 +108,9 @@ The melt pool boundary is the liquidus isotherm $T = T_\mathrm{liq}$. The three 
 
 If the melt pool reaches any domain boundary, the domain is automatically expanded and the computation is repeated (up to 20 iterations).
 
-The figure below shows how melt pool length, width, and depth vary across a laser power–scan speed grid for 316L stainless steel, illustrating the expected monotonic trends with power and the non-linear response with scan speed.
+The figure below shows how melt pool length, width, and depth vary across a laser power-scan speed grid for 316L stainless steel, illustrating the expected monotonic trends with power and the non-linear response with scan speed.
 
 <figure markdown="span" style="width: 100%; display: block; text-align: center;">
     ![Melt pool length, width, and depth as a function of laser power and scan velocity for 316L stainless steel](img/melt_dimensions_sweep.png){ width="600" }
-    <figcaption style="display: block; width: 100%; max-width: 100%;">Melt pool length, width, and depth as a function of laser power and scan velocity for 316L stainless steel (T<sub>liq</sub> = 1700 K, k = 30 W/(m·K), ρ = 7800 kg/m³, c<sub>p</sub> = 700 J/(kg·K)). Beam parameters: d = 100 µm, A = 0.35. Grid: P = 150–350 W in 25 W steps (9 points), v = 0.30–1.20 m/s in 0.15 m/s steps (7 points).</figcaption>
+    <figcaption style="display: block; width: 100%; max-width: 100%;">Melt pool length, width, and depth as a function of laser power and scan velocity for 316L stainless steel (T<sub>liq</sub> = 1700 K, k = 30 W/(m·K), ρ = 7800 kg/m³, c<sub>p</sub> = 700 J/(kg·K)). Beam parameters: d = 100 µm, A = 0.35. Grid: P = 150–350 W in 25 W steps (9 points), v = 0.30–1.20 m/s in 0.15 m/s steps (7 points), with a 5 µm spatial resolution.</figcaption>
 </figure>
