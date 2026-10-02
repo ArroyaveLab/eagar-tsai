@@ -25,7 +25,7 @@ uv run prek install
 1. Create a branch off `main` for your change.
 2. Make your change, keeping it focused and consistent with the surrounding code.
 3. Add or update tests under `tests/` for any behavior change.
-4. Update documentation under `docs/` if you change public APIs or CLI behavior.
+4. Update documentation under `docs/` if you change public APIs behavior.
 5. Run the checks below before opening a pull request.
 
 ### Running tests
