@@ -11,6 +11,8 @@ jobs:
   test:
     name: Run Tests (${{ matrix.os }}, py${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
+    env:
+      MPLBACKEND: Agg
 
     strategy:
       fail-fast: false
@@ -38,5 +40,5 @@ jobs:
       - name: Set up headless display
         uses: pyvista/setup-headless-display-action@v5.1.0
 
-      - name: Run fast tests
+      - name: Run tests
         run: uv run pytest tests/ -v
