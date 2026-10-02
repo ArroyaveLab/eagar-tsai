@@ -67,7 +67,7 @@ $$
 T(x,\,y,\,z) = T_0 + T_s \int_0^\infty f(t;\;x,\,y,\,z,\,p)\,\mathrm{d}t
 $$
 
-where $T_0 = 298\,\mathrm{K}$ is the ambient temperature and $t$ is a dimensionless time-like integration variable (not physical time). All spatial coordinates $(x, y, z)$ are non-dimensionality by $\sigma$.
+where $T_0 = 298\,\mathrm{K}$ is the ambient temperature and $t$ is a dimensionless time-like integration variable (not physical time). The spatial coordinates are non-dimensional: $x$ and $y$ are scaled by $\sigma$, and $z$ by $\sqrt{\alpha\sigma/v}$.
 
 ### Integrand
 
