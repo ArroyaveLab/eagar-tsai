@@ -8,6 +8,10 @@
 
 ::: eagar_tsai.compute_printability_map
 
+::: eagar_tsai.compute_temperature_volume
+
+::: eagar_tsai.compute_temperature_volumes
+
 ## Data Classes
 
 ::: eagar_tsai.BeamParameters
@@ -21,6 +25,8 @@
 ::: eagar_tsai.MeltPoolResult
 
 ::: eagar_tsai.TemperatureField
+
+::: eagar_tsai.TemperatureVolume
 
 ## Plotting
 
