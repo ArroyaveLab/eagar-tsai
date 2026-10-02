@@ -47,7 +47,7 @@ The model computes temperature fields produced by a Gaussian laser beam moving o
 
 ## Installation
 
-Install `eagar-tsai` with `uv` or `pip`. The C extension is compiled automatically during installation; no separate build step is needed.
+Install `eagar-tsai` with `uv` or `pip`. The pre-built wheels include the compiled C extension, so most platforms need no compiler. See [Installation](installation.md) for the supported platforms and for building from source.
 
 === "uv (recommended)"
 
