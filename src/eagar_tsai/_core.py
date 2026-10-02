@@ -11,7 +11,8 @@ Integrand (Sasha Rubenchik / LLNL 2015 reformulation of Eagar-Tsai 1983):
     f(t, x, y, z, p) = exp(-z^2/(4t) - (y^2 + (x-t)^2)/(4pt+1))
                        / ((4pt + 1) * sqrt(t))
 
-where all coordinates are non-dimensionalised by the beam sigma parameter.
+where x and y are non-dimensionalized by the beam width sigma and z by
+sqrt(alpha * sigma / v).
 """
 
 from __future__ import annotations
