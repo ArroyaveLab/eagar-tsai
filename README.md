@@ -27,7 +27,7 @@
 
 ## Installation
 
-Pre-built binary wheels are published to PyPI for Python 3.12, 3.13, and 3.14 on Linux (x86-64, i686), macOS (x86-64 and Apple Silicon), and Windows (AMD64). If a matching wheel exists for your platform, no C compiler is needed.
+Pre-built binary wheels are published to PyPI for Python 3.12, 3.13, and 3.14 on Linux (x86-64, glibc and musl), macOS (Intel and Apple Silicon), and Windows (x86-64 and 32-bit x86). If a matching wheel exists for your platform, no C compiler is needed.
 
 ```sh
 # Recommended: uv
@@ -38,7 +38,7 @@ pip install eagar-tsai
 ```
 
 > [!NOTE]
-> If no pre-built wheel matches your platform (for example, a non-standard Linux architecture or a Python version outside the supported range), the package falls back to building from source. In that case a C compiler is required: GCC or Clang on Linux/macOS; MSVC Build Tools or MinGW-w64 on Windows.
+> If no pre-built wheel matches your platform (for example, a non-standard Linux architecture or a Python version newer than 3.14), the package falls back to building from source. In that case a C compiler is required: GCC or Clang on Linux/macOS; MSVC Build Tools or MinGW-w64 on Windows.
 
 `matplotlib` and `pyvista` are not installed by default. Add the `plot` extra to use `plot_temperature_field`, `plot_temperature_field_3d`, `plot_printability_map`, or the `.plot()` / `.plot_3d()` methods on results:
 
