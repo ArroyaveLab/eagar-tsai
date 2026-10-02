@@ -283,7 +283,7 @@ volumes[0].export_vti("row0_volume.vti")
 
 ## Printability Maps
 
-`compute_printability_map` sweeps laser power and scan speed over a regular grid, runs the Eagar-Tsai model at every point, and classifies each point into one of four defect regimes (keyhole porosity, lack of fusion, balling, or defect-free) using the five criteria from Sheikh et al. (2023). Each grid point is dispatched as an independent parallel task, so workers stay fully utilized even when isolated points require iterative domain expansion.
+`compute_printability_map` sweeps laser power and scan speed over a regular grid, runs the Eagar-Tsai model at every point, and classifies each point into one of four defect regimes (keyhole porosity, lack of fusion, balling, or defect-free) using the five criteria from Sheikh et al. (2024). Each grid point is dispatched as an independent parallel task, so workers stay fully utilized even when isolated points require iterative domain expansion.
 
 ```python
 from eagar_tsai import (
