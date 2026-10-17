@@ -146,7 +146,7 @@ class SimulationDomain:
     (without the suffix) return the equivalent value in metres.
 
     Attributes:
-        x_length_um: Domain length along x (scan direction) in um.
+        x_length_um: Domain length along x (scan direction) behind the beam center in um.
         y_length_um: Domain half-width along y in um.
         z_depth_um: Domain depth along z in um.
         spatial_resolution_um: Grid spacing in um.
@@ -166,7 +166,7 @@ class SimulationDomain:
 
     @property
     def x_length(self) -> float:
-        """Domain length along x in metres."""
+        """Domain length along x behind the beam center in metres."""
         return self.x_length_um * _UM_TO_M
 
     @property
@@ -194,7 +194,7 @@ class SimulationDomain:
         """Return a new domain with expanded dimensions.
 
         Args:
-            dx_um: Additional length along x in um.
+            dx_um: Additional length along x behind the beam center in um.
             dy_um: Additional half-width along y in um.
             dz_um: Additional depth along z in um.
 

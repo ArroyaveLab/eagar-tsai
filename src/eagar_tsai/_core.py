@@ -45,8 +45,6 @@ _logger = logging.getLogger(__name__)
 _MAX_EXPANSION_ITERS: int = 20
 """Maximum number of domain-expansion iterations before giving up."""
 
-"""Default simulation domain (600 x 300 x 200 um, 1 um resolution)."""
-
 
 def eagar_tsai_integrand(t: float, x: float, y: float, z: float, p: float) -> float:
     """Evaluate the Eagar-Tsai integrand at a single point.
@@ -103,24 +101,25 @@ _INTEGRAND = _get_integrand()
 
 
 def _build_grids(
-    beam: BeamParameters,
     domain: SimulationDomain,
+    x_ahead: float,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Build 1-D coordinate arrays for the x-y and x-z temperature planes.
 
     Args:
-        beam: Laser beam parameters.
         domain: Spatial domain specification.
+        x_ahead: Grid extent ahead of the beam center in metres.
 
     Returns:
         Tuple (xrange, yrange, zrange) of 1-D ndarrays in metres.
-        xrange starts slightly ahead of the beam center in the scan direction
-        (x < 0); the trailing melt pool extends into positive x.
+        xrange runs from -x_ahead (ahead of the beam center in the scan
+        direction) to domain.x_length; the trailing melt pool extends into
+        positive x.
         yrange runs from 0 to domain.y_length
         (half-domain, by symmetry); zrange runs from -domain.z_depth to 0.
     """
     delta = domain.spatial_resolution
-    x_min = round(-1.5 * beam.beam_diameter, 9)  # small margin ahead of beam in scan direction
+    x_min = round(-x_ahead, 9)  # margin ahead of beam in scan direction
     x_max = domain.x_length
     y_min = 0.0
     y_max = domain.y_length
@@ -143,6 +142,7 @@ def _compute_temperature_planes(
     material: MaterialProperties,
     domain: SimulationDomain,
     integrand: Callable[..., float] | object,
+    x_ahead: float,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Compute the x-y (z=0) and x-z (y=0) temperature planes.
 
@@ -152,6 +152,7 @@ def _compute_temperature_planes(
         domain: Spatial domain specification.
         integrand: Callable accepted by scipy.integrate.quad — either the
             LowLevelCallable (C extension) or the Python fallback.
+        x_ahead: Grid extent ahead of the beam center in metres.
 
     Returns:
         Tuple (T_xy, T_xz, xrange, yrange, zrange).
@@ -168,7 +169,7 @@ def _compute_temperature_planes(
     thermal_ratio = alpha / (velocity * sigma)
     temp_scale = (absorptivity * power) / (np.pi * (conductivity / alpha) * np.sqrt(np.pi * alpha * velocity * (sigma**3)))
 
-    xrange, yrange, zrange = _build_grids(beam, domain)
+    xrange, yrange, zrange = _build_grids(domain, x_ahead)
     z_scale = np.sqrt((alpha * sigma) / velocity)
 
     T_xy = np.empty((yrange.size, xrange.size), dtype=np.float64)
@@ -197,9 +198,11 @@ def compute_single_point(
 
     The temperature field is evaluated on the x-y (z=0) and x-z (y=0)
     planes. Melt pool extents are extracted from the liquidus isotherm.
-    If the melt pool touches a domain boundary the domain is expanded
-    iteratively (up to _MAX_EXPANSION_ITERS times) and the computation is
-    repeated on the enlarged grid.
+    The grid starts 1.5 beam diameters ahead of the beam center and extends
+    ``domain.x_length_um`` behind it. If the melt pool touches a boundary,
+    the grid is enlarged in that direction (up to _MAX_EXPANSION_ITERS times)
+    and the computation is repeated on the enlarged grid. The margin ahead
+    of the beam doubles each time; the other boundaries grow by sigma.
 
     Args:
         beam: Laser beam and process parameters.
@@ -225,6 +228,7 @@ def compute_single_point(
         domain = SimulationDomain()
 
     sigma_um = beam.sigma * 1.0e6  # metres -> um for domain expansion steps
+    x_ahead = 1.5 * beam.beam_diameter
 
     # Thermal scaling factors depend only on beam/material, not on the domain,
     # so they are computed once outside the expansion loop.
@@ -239,9 +243,9 @@ def compute_single_point(
 
     for iteration in range(_MAX_EXPANSION_ITERS):
         if full_field:
-            T_xy, T_xz, xrange, yrange, zrange = _compute_temperature_planes(beam, material, domain, _INTEGRAND)
+            T_xy, T_xz, xrange, yrange, zrange = _compute_temperature_planes(beam, material, domain, _INTEGRAND, x_ahead)
         else:
-            xrange, yrange, zrange = _build_grids(beam, domain)
+            xrange, yrange, zrange = _build_grids(domain, x_ahead)
             T_xy = np.empty((yrange.size, xrange.size), dtype=np.float64)
             for ix in range(xrange.size):
                 x_nd = xrange[ix] / sigma
@@ -324,9 +328,19 @@ def compute_single_point(
                     tmp_z = float(np.amax(melt_z_vals) - np.amin(melt_z_vals))
                     z_length = max(z_length, tmp_z)
 
+            needs_expansion_x_front = melt_x_indices[0] == 0
             needs_expansion_x = np.isclose(float(np.amax(xrange[melt_x_indices])), x_max)
             needs_expansion_y = np.isclose(y_half_length, y_max)
             needs_expansion_z = np.isclose(z_length, z_span)
+
+            if needs_expansion_x_front:
+                _logger.info(
+                    "Iteration %d: x domain too small ahead of the beam (%.1f um), doubling it.",
+                    iteration,
+                    x_ahead * 1.0e6,
+                )
+                x_ahead *= 2.0
+                continue
 
             if needs_expansion_x:
                 _logger.info(
@@ -360,6 +374,16 @@ def compute_single_point(
 
         else:
             # Fast path: check x expansion before paying the cost of T_xz.
+            needs_expansion_x_front = melt_x_indices[0] == 0
+            if needs_expansion_x_front:
+                _logger.info(
+                    "Iteration %d: x domain too small ahead of the beam (%.1f um), doubling it.",
+                    iteration,
+                    x_ahead * 1.0e6,
+                )
+                x_ahead *= 2.0
+                continue
+
             needs_expansion_x = np.isclose(float(np.amax(xrange[melt_x_indices])), x_max)
             if needs_expansion_x:
                 _logger.info(

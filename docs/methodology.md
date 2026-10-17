@@ -106,7 +106,7 @@ The melt pool boundary is the liquidus isotherm $T = T_\mathrm{liq}$. The three 
 | Width     | $2 \times$ half-extent of $T \geq T_\mathrm{liq}$ along $y$ at the surface |
 | Depth     | Extent of $T \geq T_\mathrm{liq}$ along $z$ at the centerline              |
 
-If the melt pool reaches any domain boundary, the domain is automatically expanded and the computation is repeated (up to 20 iterations).
+The grid starts $1.5\,d$ ahead of the beam center and extends `x_length_um` behind it, `y_length_um` to the side (half-domain, by symmetry), and `z_depth_um` below the surface. If the melt pool reaches one of these boundaries, the grid is enlarged in that direction and the computation is repeated (up to 20 iterations). The margin ahead of the beam doubles each time; the other boundaries grow by $\sigma$.
 
 The figure below shows how melt pool length, width, and depth vary across a laser power-scan speed grid for 316L stainless steel, illustrating the expected monotonic trends with power and the non-linear response with scan speed.
 

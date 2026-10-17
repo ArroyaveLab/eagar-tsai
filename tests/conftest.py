@@ -31,6 +31,17 @@ def steel_material() -> MaterialProperties:
 
 
 @pytest.fixture
+def small_slow_beam() -> BeamParameters:
+    """A small, slow beam whose steel melt pool reaches well ahead of the beam."""
+    return BeamParameters(
+        beam_diameter=10e-6,
+        power=40.0,
+        velocity=0.1,
+        absorptivity=0.35,
+    )
+
+
+@pytest.fixture
 def small_domain() -> SimulationDomain:
     """A coarse, small domain for fast tests (not physically accurate)."""
     return SimulationDomain(
