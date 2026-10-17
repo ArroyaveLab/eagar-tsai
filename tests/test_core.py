@@ -113,6 +113,46 @@ class TestComputeSinglePointNonConvergence:
             compute_single_point(steel_beam, steel_material, small_domain)
 
 
+class TestComputeSinglePointLeadingBoundary:
+    """Tests for expansion of the grid ahead of the beam."""
+
+    @pytest.mark.parametrize("full_field", [True, False])
+    def test_melt_pool_not_clipped_ahead_of_beam(
+        self,
+        small_slow_beam: BeamParameters,
+        steel_material: MaterialProperties,
+        full_field: bool,
+    ) -> None:
+        """A melt pool reaching past 1.5 beam diameters ahead of the beam is not truncated."""
+        domain = SimulationDomain(x_length_um=70.0, y_length_um=50.0, z_depth_um=50.0, spatial_resolution_um=2.0)
+        result = compute_single_point(small_slow_beam, steel_material, domain, full_field=full_field)
+        tf = result.temperature_field
+        assert tf.x_range_m[0] < -1.5 * small_slow_beam.beam_diameter
+        assert tf.T_xy[0, 0] < steel_material.liquidus_temperature
+        assert 80.0 < result.length_um <= 84.2
+
+    def test_leading_margin_unchanged_when_not_reached(
+        self,
+        steel_beam: BeamParameters,
+        steel_material: MaterialProperties,
+        small_domain: SimulationDomain,
+    ) -> None:
+        """The grid keeps its 1.5 beam diameter margin when the melt pool stays inside it."""
+        result = compute_single_point(steel_beam, steel_material, small_domain)
+        assert math.isclose(result.temperature_field.x_range_m[0], -1.5 * steel_beam.beam_diameter)
+
+    def test_volume_uses_expanded_leading_margin(
+        self,
+        small_slow_beam: BeamParameters,
+        steel_material: MaterialProperties,
+    ) -> None:
+        """compute_temperature_volume evaluates the 3-D field on the expanded grid."""
+        domain = SimulationDomain(x_length_um=70.0, y_length_um=50.0, z_depth_um=50.0, spatial_resolution_um=4.0)
+        vol = compute_temperature_volume(small_slow_beam, steel_material, domain)
+        assert vol.x_range_m[0] < -1.5 * small_slow_beam.beam_diameter
+        assert vol.T_xyz[0, 0, -1] < steel_material.liquidus_temperature
+
+
 class TestComputeSinglePointReturnField:
     """Tests for compute_single_point return type and embedded TemperatureField."""
 
